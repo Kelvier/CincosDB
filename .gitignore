@@ -4,3 +4,4 @@ backups/
 __pycache__/
 *.pyc
 app/staticfiles/
+app/inventario/static/inventario/cincos-ca.crt

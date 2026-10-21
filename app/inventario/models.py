@@ -78,6 +78,38 @@ class Movimiento(models.Model):
     anterior = models.IntegerField(null=True, blank=True)
     nuevo = models.IntegerField(null=True, blank=True)
     detalle = models.TextField(blank=True)
+    lote = models.UUIDField(null=True, blank=True, db_index=True)
+    revertido = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-fecha"]
+
+
+VARIANTES = [("nacional", "Nacional"), ("internacional", "Internacional"), ("facial", "Facial")]
+
+
+class Uso(models.Model):
+    """Que piezas lleva cada tipo de manipulo y cuantas por unidad."""
+    pieza = models.ForeignKey(PiezaManipulo, on_delete=models.CASCADE, related_name="usos")
+    variante = models.CharField(max_length=15, choices=VARIANTES)
+    cantidad = models.PositiveIntegerField("x Manipulo", default=1)
+
+    class Meta:
+        unique_together = [("pieza", "variante")]
+        verbose_name = "pieza por variante"
+        verbose_name_plural = "piezas por variante"
+
+
+OC_VARIANTES = [("nacional", "Nacional"), ("internacional", "Internacional")]
+
+
+class UsoOcarina(models.Model):
+    """Que piezas lleva cada tipo de ocarine y cuantas por maquina."""
+    pieza = models.ForeignKey(PiezaOcarina, on_delete=models.CASCADE, related_name="usos")
+    variante = models.CharField(max_length=15, choices=OC_VARIANTES)
+    cantidad = models.PositiveIntegerField("x Máquina", default=1)
+
+    class Meta:
+        unique_together = [("pieza", "variante")]
+        verbose_name = "pieza por variante de ocarine"
+        verbose_name_plural = "piezas por variante de ocarine"

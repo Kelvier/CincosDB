@@ -1,0 +1,52 @@
+{% load static %}
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Historial - Cincos</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}">
+{% include "inventario/_pwa.html" %}</head>
+<body>
+{% include "inventario/_topbar.html" %}
+<main>
+<div class="crumb"><a href="{% url 'inicio' %}">Inicio</a> / Historial</div>
+<h1>Historial de movimientos</h1>
+<p class="nota">Se muestran las últimas operaciones.
+{% if es_admin %}Como administrador puedes deshacer cualquier ajuste, montaje o reciclaje.
+{% else %}Puedes deshacer tus propios ajustes, montajes y reciclajes durante las primeras {{ limite }} horas.{% endif %}</p>
+
+<div class="toolbar">
+  <input id="h-buscar" type="search" placeholder="Buscar por código, pieza o usuario...">
+  <select id="h-tipo"><option value="">Todas las operaciones</option>{% for k, n in tipos %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select>
+  <select id="h-user"><option value="">Todos los usuarios</option>{% for u in usuarios %}<option>{{ u }}</option>{% endfor %}</select>
+</div>
+
+<div class="tabla-wrap">
+<table id="hist">
+  <thead><tr><th>Fecha</th><th>Usuario</th><th>Sección</th><th>Operación</th><th>Detalle</th><th>Acción</th></tr></thead>
+  <tbody>
+  {% for op in ops %}
+  <tr class="{% if op.revertido %}revertido{% endif %}" data-q="{{ op.q }}" data-tipo="{{ op.tipo }}" data-user="{{ op.usuario }}">
+    <td>{{ op.fecha|date:"d/m/Y H:i" }}</td>
+    <td>{{ op.usuario }}</td>
+    <td>{{ op.seccion }}</td>
+    <td><span class="pill {{ op.color }}">{{ op.etiqueta }}</span>{% if op.revertido %} <span class="pill gris">Deshecha</span>{% endif %}</td>
+    <td class="det">{{ op.resumen }}
+      {% if op.movs|length > 1 %}
+      <details><summary>Ver {{ op.movs|length }} registros</summary>
+        <table class="sub"><thead><tr><th>Código</th><th>Antes</th><th>Después</th></tr></thead><tbody>
+        {% for c, a, n in op.movs %}<tr><td>{{ c }}</td><td>{{ a }}</td><td>{{ n }}</td></tr>{% endfor %}
+        </tbody></table>
+      </details>
+      {% endif %}
+    </td>
+    <td>{% if op.puede %}<button class="btn-ed" data-deshacer="{{ op.lote }}">Deshacer</button>{% endif %}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6">Todavía no hay movimientos.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</main>
+<div id="toast"></div>
+<script src="{% static 'inventario/historial.js' %}"></script>
+</body></html>

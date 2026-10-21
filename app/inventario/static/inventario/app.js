@@ -1,6 +1,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const B = document.body, TABLA = B.dataset.tabla, UNIDAD = B.dataset.unidad;
+  const VAR = B.dataset.variante || "";
   const ADMIN = B.dataset.admin === "1", RAPIDA = B.dataset.rapida === "1";
   const META = JSON.parse($("meta").textContent), META_C = JSON.parse($("meta-contador").textContent);
   const csrf = () => (document.cookie.split("; ").find(c => c.startsWith("csrftoken=")) || "").split("=")[1] || "";
@@ -50,7 +51,7 @@
   async function ajustar(el, delta, btn) {
     btn.disabled = true;
     try {
-      const j = await post(`/api/${tb(el)}/${el.dataset.pk}/ajustar/`, { delta });
+      const j = await post(`/api/${tb(el)}/${el.dataset.pk}/ajustar/`, { delta, variante: VAR });
       pintar(el, j.fila); resumen(j.resumen); toast("Guardado ");
       const i = el.querySelector(".cant"); if (i) i.value = 1;
     } catch (e) { toast(e.message, false); } finally { btn.disabled = false; }
@@ -89,9 +90,9 @@
     const datos = {};
     metaAct.forEach(m => { const i = $("frm").elements[m.name]; datos[m.name] = m.type === "bool" ? i.checked : i.value; });
     try {
-      if (actual.nuevo) { await post(`/api/${TABLA}/nuevo/`, { datos }); location.reload(); return; }
+      if (actual.nuevo) { await post(`/api/${TABLA}/nuevo/`, { datos, variante: VAR }); location.reload(); return; }
       const f = JSON.parse(actual.el.dataset.json);
-      const j = await post(`/api/${tb(actual.el)}/${f.pk}/editar/`, { datos, version: f.version });
+      const j = await post(`/api/${tb(actual.el)}/${f.pk}/editar/`, { datos, version: f.version, variante: VAR });
       pintar(actual.el, j.fila); resumen(j.resumen); $("dlg").close(); toast("Guardado ");
     } catch (err) { $("dlg-err").textContent = err.message; }
   });
@@ -101,8 +102,8 @@
 
   async function borrar(el) {
     const f = JSON.parse(el.dataset.json);
-    if (!confirm(`¿Borrar ${f.datos.codigo} - ${f.datos.nombre}? Esta acción no se puede deshacer.`)) return;
-    try { await post(`/api/${TABLA}/${f.pk}/borrar/`, {}); location.reload(); }
+    const msg = VAR ? `¿Quitar ${f.datos.codigo} - ${f.datos.nombre} de este tipo? Si ningún otro tipo la usa, se borrará del todo.` : `¿Borrar ${f.datos.codigo} - ${f.datos.nombre}? Esta acción no se puede deshacer.`; if (!confirm(msg)) return;
+    try { await post(`/api/${TABLA}/${f.pk}/borrar/`, { variante: VAR }); location.reload(); }
     catch (e) { toast(e.message, false); }
   }
 
@@ -150,7 +151,7 @@
     if (!confirm(`¿Montar ${n} ${UNIDAD}(s)? Se restarán los materiales del stock.`)) return;
     $("m-ok").disabled = true;
     try {
-      const j = await post(`/api/${TABLA}/montar/`, { n, forzar });
+      const j = await post(`/api/${TABLA}/montar/`, { n, forzar, variante: VAR });
       aplicar(j); toast(`${n} ${UNIDAD}(s) montada(s) `);
     } catch (e) { toast(e.message, false); }
     renderMontar();
@@ -187,7 +188,7 @@
     if (!confirm(`¿Guardar el reciclaje de ${n} ${UNIDAD}(s)? Las piezas marcadas se sumarán al stock.`)) return;
     $("r-ok").disabled = true;
     try {
-      const j = await post(`/api/${TABLA}/reciclar/`, { n, items });
+      const j = await post(`/api/${TABLA}/reciclar/`, { n, items, variante: VAR });
       aplicar(j); Object.keys(rec).forEach(k => delete rec[k]); renderReciclar(); toast("Reciclaje guardado ");
     } catch (e) { toast(e.message, false); } finally { $("r-ok").disabled = false; }
   }

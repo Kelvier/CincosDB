@@ -1,27 +1,33 @@
 {% load static %}
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inicio · Cincos</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inicio - Cincos</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}">
+{% include "inventario/_pwa.html" %}</head>
 <body>
 {% include "inventario/_topbar.html" %}
 <main>
   <section class="hero">
-    <h1>Hola, {{ request.user.username }} </h1>
+    <h1>Hola, {{ request.user.username }}</h1>
     <p>¿Con qué quieres trabajar hoy?</p>
   </section>
   <section class="tiles">
     {% for t in tiles %}
     <a class="tile tile-{{ t.clave }}" href="{% url t.url %}">
-      <div class="tile-ico">{{ t.icono }}</div>
+      <div class="tile-ico"><svg class="i"><use href="#i-{{ t.clave }}"/></svg></div>
       <h2>{{ t.titulo }}</h2>
       <p>{{ t.desc }}</p>
       <div class="tile-stats">
         <span><b>{{ t.total }}</b> piezas</span>
         <span class="{% if t.bajos %}alerta{% endif %}"><b>{{ t.bajos }}</b> con poco material</span>
       </div>
-      <div class="tile-ops"><span> Reparación</span><span> Montar</span><span> Reciclar</span>{% if es_admin %}<span> Avanzada</span>{% endif %}</div>
-      <span class="tile-go">Entrar </span>
+      <div class="tile-ops">
+        <span><svg class="i"><use href="#i-wrench"/></svg>Reparación</span>
+        <span><svg class="i"><use href="#i-factory"/></svg>Montar</span>
+        <span><svg class="i"><use href="#i-recycle"/></svg>Reciclar</span>
+        {% if es_admin %}<span><svg class="i"><use href="#i-sliders"/></svg>Avanzada</span>{% endif %}
+      </div>
+      <span class="tile-go">Entrar &rarr;</span>
     </a>
     {% endfor %}
   </section>

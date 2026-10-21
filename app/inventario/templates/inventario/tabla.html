@@ -1,13 +1,14 @@
 {% load static %}
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
-<body data-tabla="{{ tabla }}" data-unidad="{{ unidad }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}">
+{% include "inventario/_pwa.html" %}</head>
+<body data-tabla="{{ tabla }}" data-variante="{{ variante }}" data-unidad="{{ unidad }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
 {% include "inventario/_topbar.html" %}
 
 <main>
-<div class="crumb"><a href="{% url 'inicio' %}">Inicio</a>  {{ nombre_seccion }}</div>
+<div class="crumb"><a href="{% url 'inicio' %}">Inicio</a> / <a href="{{ url_menu }}">{{ nombre_seccion }}</a> / {{ nombre_variante }}</div>
 <h1>{{ titulo }}</h1>
 
 <section class="cards">
@@ -18,7 +19,7 @@
     <div class="card-valor" data-campo="valor">{{ c.texto }}</div>
     <div class="card-acc">
       <span class="solo-rapida"><button class="mini" data-ajuste="-1">&#45;</button><button class="mini" data-ajuste="1">+</button></span>
-      <button class="mini solo-avanzada" data-editar></button>
+      <button class="mini solo-avanzada" data-editar><svg class="i"><use href="#i-edit"/></svg></button>
     </div>
   </div>
   {% else %}
@@ -29,16 +30,16 @@
 </section>
 
 <nav class="tabs">
-  {% if puede_rapida %}<button class="tab" data-modo="rapida"><i></i><b>Reparación</b><small>Sumar o restar piezas</small></button>{% endif %}
-  {% if puede_rapida %}<button class="tab" data-modo="montar"><i></i><b>Montar {{ unidad }}</b><small>Resta los materiales solo</small></button>{% endif %}
-  {% if puede_rapida %}<button class="tab" data-modo="reciclar"><i></i><b>Reciclar</b><small>Anotar piezas recuperadas</small></button>{% endif %}
-  {% if es_admin %}<button class="tab" data-modo="avanzada"><i></i><b>Edición avanzada</b><small>Editar todos los datos</small></button>{% endif %}
+  {% if puede_rapida %}<button class="tab" data-modo="rapida"><i><svg class="i"><use href="#i-wrench"/></svg></i><b>Reparación</b><small>Sumar o restar piezas</small></button>{% endif %}
+  {% if puede_rapida %}<button class="tab" data-modo="montar"><i><svg class="i"><use href="#i-factory"/></svg></i><b>Montar {{ unidad }}</b><small>Resta los materiales solo</small></button>{% endif %}
+  {% if puede_rapida %}<button class="tab" data-modo="reciclar"><i><svg class="i"><use href="#i-recycle"/></svg></i><b>Reciclar</b><small>Anotar piezas recuperadas</small></button>{% endif %}
+  {% if es_admin %}<button class="tab" data-modo="avanzada"><i><svg class="i"><use href="#i-sliders"/></svg></i><b>Edición avanzada</b><small>Editar todos los datos</small></button>{% endif %}
 </nav>
 
 <!-- ===== Vista: tabla (reparación / avanzada) ===== -->
 <section id="vista-tabla" class="vista">
   <div class="toolbar">
-    <input id="buscar" type="search" placeholder="  Buscar por código o nombre">
+    <input id="buscar" type="search" placeholder="Buscar por código o nombre">
     <select id="f-quien"><option value="">Todos</option>{% for q in quienes %}<option>{{ q }}</option>{% endfor %}</select>
     <label class="chk"><input type="checkbox" id="f-bajo"> Solo poco material</label>
     {% if es_admin %}<button class="btn solo-avanzada" id="btn-nuevo">+ Nueva pieza</button>{% endif %}
@@ -61,8 +62,8 @@
           <button class="mas" data-signo="1" aria-label="Sumar">+</button>
         </div>
         <div class="solo-avanzada">
-          <button class="btn-ed" data-editar> Editar</button>
-          <button class="btn-del" data-borrar aria-label="Borrar"></button>
+          <button class="btn-ed" data-editar><svg class="i"><use href="#i-edit"/></svg> Editar</button>
+          <button class="btn-del" data-borrar aria-label="Borrar"><svg class="i"><use href="#i-trash"/></svg></button>
         </div>
       </td>
     </tr>
@@ -109,7 +110,7 @@
     </div>
   </div>
   <div class="toolbar">
-    <input id="r-buscar" type="search" placeholder="  Buscar por código o nombre">
+    <input id="r-buscar" type="search" placeholder="Buscar por código o nombre">
     <button type="button" class="btn sec" id="r-todas">Marcar todas</button>
     <button type="button" class="btn sec" id="r-ninguna">Ninguna</button>
   </div>

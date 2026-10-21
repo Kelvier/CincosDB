@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ titulo }} - Cincos</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}">
+{% include "inventario/_pwa.html" %}</head>
+<body>
+{% include "inventario/_topbar.html" %}
+<main>
+  <div class="crumb"><a href="{% url 'inicio' %}">Inicio</a> / {{ titulo }}</div>
+  <section class="hero">
+    <h1>{{ titulo }}</h1>
+    <p>{{ subtitulo }}</p>
+  </section>
+  <section class="tiles">
+    {% for t in tiles %}
+    <a class="tile tile-{{ t.clave }}" href="{{ t.href }}">
+      <div class="tile-ico">{{ t.letra }}</div>
+      <h2>{{ t.nombre }}</h2>
+      <p>{{ t.desc }}</p>
+      <div class="tile-stats">
+        <span><b>{{ t.total }}</b> piezas</span>
+        <span class="{% if t.bajos %}alerta{% endif %}"><b>{{ t.bajos }}</b> con poco material</span>
+        <span><b>{{ t.hechos }}</b> terminados</span>
+      </div>
+      <span class="tile-go">Entrar &rarr;</span>
+    </a>
+    {% endfor %}
+  </section>
+</main>
+</body></html>
