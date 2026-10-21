@@ -1,0 +1,91 @@
+{% load static %}
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
+<body data-tabla="{{ tabla }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
+<header class="top">
+  <nav>
+    <a href="{% url 'ocarinas' %}" class="{% if tabla == 'ocarina' %}act{% endif %}">Ocarinas</a>
+    <a href="{% url 'manipulos' %}" class="{% if tabla == 'manipulo' %}act{% endif %}">Manípulos</a>
+  </nav>
+  <div class="user">{{ request.user.username }}
+    {% if es_admin %}<a href="/admin/">Usuarios e historial</a>{% endif %}
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">Salir</button></form>
+  </div>
+</header>
+
+<main>
+<h1>{{ titulo }}</h1>
+
+<section class="cards">
+{% for c in tarjetas %}
+  {% if c.pk %}
+  <div class="card" data-pk="{{ c.pk }}" data-json="{{ c.json }}">
+    <div class="card-label">{{ c.etiqueta }}</div>
+    <div class="card-valor" data-campo="valor">{{ c.texto }}</div>
+    <div class="card-acc">
+      <span class="solo-rapida"><button class="mini" data-ajuste="-1"></button><button class="mini" data-ajuste="1">+</button></span>
+      <button class="mini solo-avanzada" data-editar></button>
+    </div>
+  </div>
+  {% else %}
+  <div class="card calc"><div class="card-label">{{ c.etiqueta }}</div>
+    <div class="card-valor" data-resumen="{{ c.calc }}">{{ c.texto }}</div></div>
+  {% endif %}
+{% endfor %}
+</section>
+
+<section class="toolbar">
+  <div class="modos">
+    {% if puede_rapida %}<button class="modo" data-modo="rapida"> Edición rápida<small>Sumar o restar unidades</small></button>{% endif %}
+    {% if es_admin %}<button class="modo" data-modo="avanzada"> Edición avanzada<small>Editar todos los datos</small></button>{% endif %}
+  </div>
+  <input id="buscar" type="search" placeholder="Buscar código o nombre">
+  <select id="f-quien"><option value="">Todos</option>{% for q in quienes %}<option>{{ q }}</option>{% endfor %}</select>
+  <label class="chk"><input type="checkbox" id="f-bajo"> Solo poco material</label>
+  {% if es_admin %}<button class="btn solo-avanzada" id="btn-nuevo">+ Nueva pieza</button>{% endif %}
+</section>
+
+<div class="tabla-wrap">
+<table id="tabla">
+  <thead><tr>{% for c, et in columnas %}<th>{{ et }}</th>{% endfor %}<th class="acc">Acciones</th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+  <tr data-pk="{{ f.pk }}" data-json="{{ f.json }}" data-q="{{ f.q }}" data-quien="{{ f.quien }}"{% if f.bajo %} class="bajo"{% endif %}>
+    {% for campo, txt in f.celdas %}
+      {% if campo == "estado" %}
+      <td data-campo="estado"><span class="pill {% if f.bajo %}rojo">POCO{% else %}verde">OK{% endif %}</span></td>
+      {% else %}<td data-campo="{{ campo }}">{{ txt }}</td>{% endif %}
+    {% endfor %}
+    <td class="acc">
+      <div class="solo-rapida ajuste">
+        <button class="mas" data-signo="-1" aria-label="Restar"></button>
+        <input type="number" min="1" value="1" class="cant" inputmode="numeric">
+        <button class="mas" data-signo="1" aria-label="Sumar">+</button>
+      </div>
+      <div class="solo-avanzada">
+        <button class="btn-ed" data-editar> Editar</button>
+        <button class="btn-del" data-borrar aria-label="Borrar"></button>
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</main>
+
+<dialog id="dlg">
+  <form id="frm"><h2 id="dlg-t">Editar</h2>
+    <div id="dlg-campos"></div><p id="dlg-err" class="err"></p>
+    <div class="dlg-bt"><button type="button" id="dlg-cancel" class="btn sec">Cancelar</button>
+      <button type="submit" class="btn">Guardar</button></div>
+  </form>
+</dialog>
+<div id="toast"></div>
+
+{{ meta|json_script:"meta" }}
+{{ meta_contador|json_script:"meta-contador" }}
+<script src="{% static 'inventario/app.js' %}"></script>
+</body></html>
