@@ -3,19 +3,11 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
-<body data-tabla="{{ tabla }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
-<header class="top">
-  <nav>
-    <a href="{% url 'ocarinas' %}" class="{% if tabla == 'ocarina' %}act{% endif %}">Ocarinas</a>
-    <a href="{% url 'manipulos' %}" class="{% if tabla == 'manipulo' %}act{% endif %}">Manípulos</a>
-  </nav>
-  <div class="user">{{ request.user.username }}
-    {% if es_admin %}<a href="/admin/">Usuarios e historial</a>{% endif %}
-    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link">Salir</button></form>
-  </div>
-</header>
+<body data-tabla="{{ tabla }}" data-unidad="{{ unidad }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
+{% include "inventario/_topbar.html" %}
 
 <main>
+<div class="crumb"><a href="{% url 'inicio' %}">Inicio</a>  {{ nombre_seccion }}</div>
 <h1>{{ titulo }}</h1>
 
 <section class="cards">
@@ -25,7 +17,7 @@
     <div class="card-label">{{ c.etiqueta }}</div>
     <div class="card-valor" data-campo="valor">{{ c.texto }}</div>
     <div class="card-acc">
-      <span class="solo-rapida"><button class="mini" data-ajuste="-1"></button><button class="mini" data-ajuste="1">+</button></span>
+      <span class="solo-rapida"><button class="mini" data-ajuste="-1">&#45;</button><button class="mini" data-ajuste="1">+</button></span>
       <button class="mini solo-avanzada" data-editar></button>
     </div>
   </div>
@@ -36,44 +28,101 @@
 {% endfor %}
 </section>
 
-<section class="toolbar">
-  <div class="modos">
-    {% if puede_rapida %}<button class="modo" data-modo="rapida"> Edición rápida<small>Sumar o restar unidades</small></button>{% endif %}
-    {% if es_admin %}<button class="modo" data-modo="avanzada"> Edición avanzada<small>Editar todos los datos</small></button>{% endif %}
+<nav class="tabs">
+  {% if puede_rapida %}<button class="tab" data-modo="rapida"><i></i><b>Reparación</b><small>Sumar o restar piezas</small></button>{% endif %}
+  {% if puede_rapida %}<button class="tab" data-modo="montar"><i></i><b>Montar {{ unidad }}</b><small>Resta los materiales solo</small></button>{% endif %}
+  {% if puede_rapida %}<button class="tab" data-modo="reciclar"><i></i><b>Reciclar</b><small>Anotar piezas recuperadas</small></button>{% endif %}
+  {% if es_admin %}<button class="tab" data-modo="avanzada"><i></i><b>Edición avanzada</b><small>Editar todos los datos</small></button>{% endif %}
+</nav>
+
+<!-- ===== Vista: tabla (reparación / avanzada) ===== -->
+<section id="vista-tabla" class="vista">
+  <div class="toolbar">
+    <input id="buscar" type="search" placeholder="  Buscar por código o nombre">
+    <select id="f-quien"><option value="">Todos</option>{% for q in quienes %}<option>{{ q }}</option>{% endfor %}</select>
+    <label class="chk"><input type="checkbox" id="f-bajo"> Solo poco material</label>
+    {% if es_admin %}<button class="btn solo-avanzada" id="btn-nuevo">+ Nueva pieza</button>{% endif %}
   </div>
-  <input id="buscar" type="search" placeholder="Buscar código o nombre">
-  <select id="f-quien"><option value="">Todos</option>{% for q in quienes %}<option>{{ q }}</option>{% endfor %}</select>
-  <label class="chk"><input type="checkbox" id="f-bajo"> Solo poco material</label>
-  {% if es_admin %}<button class="btn solo-avanzada" id="btn-nuevo">+ Nueva pieza</button>{% endif %}
+  <div class="tabla-wrap">
+  <table id="tabla">
+    <thead><tr>{% for c, et in columnas %}<th>{{ et }}</th>{% endfor %}<th class="acc">Acciones</th></tr></thead>
+    <tbody>
+    {% for f in filas %}
+    <tr data-pk="{{ f.pk }}" data-json="{{ f.json }}" data-q="{{ f.q }}" data-quien="{{ f.quien }}"{% if f.bajo %} class="bajo"{% endif %}>
+      {% for campo, txt in f.celdas %}
+        {% if campo == "estado" %}
+        <td data-campo="estado"><span class="pill {% if f.bajo %}rojo">POCO{% else %}verde">OK{% endif %}</span></td>
+        {% else %}<td data-campo="{{ campo }}">{{ txt }}</td>{% endif %}
+      {% endfor %}
+      <td class="acc">
+        <div class="solo-rapida ajuste">
+          <button class="mas" data-signo="-1" aria-label="Restar">&#45;</button>
+          <input type="number" min="1" value="1" class="cant" inputmode="numeric">
+          <button class="mas" data-signo="1" aria-label="Sumar">+</button>
+        </div>
+        <div class="solo-avanzada">
+          <button class="btn-ed" data-editar> Editar</button>
+          <button class="btn-del" data-borrar aria-label="Borrar"></button>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
 </section>
 
-<div class="tabla-wrap">
-<table id="tabla">
-  <thead><tr>{% for c, et in columnas %}<th>{{ et }}</th>{% endfor %}<th class="acc">Acciones</th></tr></thead>
-  <tbody>
-  {% for f in filas %}
-  <tr data-pk="{{ f.pk }}" data-json="{{ f.json }}" data-q="{{ f.q }}" data-quien="{{ f.quien }}"{% if f.bajo %} class="bajo"{% endif %}>
-    {% for campo, txt in f.celdas %}
-      {% if campo == "estado" %}
-      <td data-campo="estado"><span class="pill {% if f.bajo %}rojo">POCO{% else %}verde">OK{% endif %}</span></td>
-      {% else %}<td data-campo="{{ campo }}">{{ txt }}</td>{% endif %}
-    {% endfor %}
-    <td class="acc">
-      <div class="solo-rapida ajuste">
-        <button class="mas" data-signo="-1" aria-label="Restar"></button>
-        <input type="number" min="1" value="1" class="cant" inputmode="numeric">
-        <button class="mas" data-signo="1" aria-label="Sumar">+</button>
-      </div>
-      <div class="solo-avanzada">
-        <button class="btn-ed" data-editar> Editar</button>
-        <button class="btn-del" data-borrar aria-label="Borrar"></button>
-      </div>
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-</div>
+{% if puede_rapida %}
+<!-- ===== Vista: montar ===== -->
+<section id="vista-montar" class="vista" hidden>
+  <div class="panel-head">
+    <div><h2> Montar {{ unidad }}</h2>
+      <p>Se restarán automáticamente del stock los materiales necesarios. Revisa el resumen antes de confirmar.</p></div>
+    <div class="stepper grande">
+      <button type="button" data-target="m-n" data-nstep="-1">&#45;</button>
+      <input id="m-n" type="number" min="1" max="1000" value="1" inputmode="numeric">
+      <button type="button" data-target="m-n" data-nstep="1">+</button>
+      <span>{{ unidades }}</span>
+    </div>
+  </div>
+  <div id="m-aviso" class="aviso"></div>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Código</th><th>Pieza</th><th>Necesita</th><th>Hay</th><th>Quedará</th><th>Estado</th></tr></thead>
+    <tbody id="m-body"></tbody>
+  </table></div>
+  <div class="barra-acc">
+    {% if es_admin %}<label class="chk"><input type="checkbox" id="m-forzar"> Montar aunque falte material (solo admin)</label>{% endif %}
+    <button class="btn accion" id="m-ok"> Montar</button>
+  </div>
+</section>
+
+<!-- ===== Vista: reciclar ===== -->
+<section id="vista-reciclar" class="vista" hidden>
+  <div class="panel-head">
+    <div><h2> Reciclar {{ unidad }}</h2>
+      <p>Indica cuántas unidades de cada pieza se han podido recuperar. Las que pongas se suman al stock.</p></div>
+    <div class="stepper grande">
+      <button type="button" data-target="r-n" data-nstep="-1">&#45;</button>
+      <input id="r-n" type="number" min="1" max="1000" value="1" inputmode="numeric">
+      <button type="button" data-target="r-n" data-nstep="1">+</button>
+      <span>{{ unidades }} a reciclar</span>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input id="r-buscar" type="search" placeholder="  Buscar por código o nombre">
+    <button type="button" class="btn sec" id="r-todas">Marcar todas</button>
+    <button type="button" class="btn sec" id="r-ninguna">Ninguna</button>
+  </div>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Código</th><th>Pieza</th><th>Máximo</th><th>Recuperadas</th><th>Stock actual</th></tr></thead>
+    <tbody id="r-body"></tbody>
+  </table></div>
+  <div class="barra-acc">
+    <span id="r-total" class="total"></span>
+    <button class="btn accion" id="r-ok"> Guardar reciclaje</button>
+  </div>
+</section>
+{% endif %}
 </main>
 
 <dialog id="dlg">

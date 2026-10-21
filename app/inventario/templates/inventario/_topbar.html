@@ -1,0 +1,17 @@
+<header class="top">
+  <a class="brand" href="{% url 'inicio' %}">
+    <span class="logo">C</span>
+    <span class="brand-t">Cincos<small>Gestión de materiales</small></span>
+  </a>
+  <nav class="nav">
+    <a href="{% url 'inicio' %}" class="{% if seccion == 'inicio' %}act{% endif %}">Inicio</a>
+    <a href="{% url 'ocarines' %}" class="{% if seccion == 'ocarina' %}act{% endif %}">Ocarines</a>
+    <a href="{% url 'manipulos' %}" class="{% if seccion == 'manipulo' %}act{% endif %}">Manípulos</a>
+  </nav>
+  <div class="user">
+    <span class="avatar">{{ request.user.username|slice:":1"|upper }}</span>
+    <span class="user-n">{{ request.user.username }}<small>{% if request.user.is_superuser %}Administrador{% else %}Empleado{% endif %}</small></span>
+    {% if request.user.is_superuser %}<a class="user-l" href="/admin/">Usuarios e historial</a>{% endif %}
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="user-l">Salir</button></form>
+  </div>
+</header>

@@ -11,15 +11,18 @@ from django.utils import formats
 from .models import QUIEN, Contador, Movimiento, PiezaManipulo, PiezaOcarina
 
 TABLAS = {"ocarina": PiezaOcarina, "manipulo": PiezaManipulo, "contador": Contador}
+CONTADOR_MONTAJE = {"ocarina": "ocarines_acabadas", "manipulo": "manipulos_terminados"}
 
 PAGINAS = {
     "ocarina": {
-        "titulo": "Inventario Cincos · Ocarinas",
+        "titulo": "Inventario Cincos · Ocarines", "seccion": "Ocarines",
+        "unidad": "máquina", "unidades": "máquinas",
         "tarjetas": [("c", "ocarines_acabadas"), ("calc", "maquinas_posibles", "Máquinas posibles"),
                      ("c", "oc_int_fin"), ("calc", "inter_posibles", "Inter. posibles")],
     },
     "manipulo": {
-        "titulo": "Manípulos",
+        "titulo": "Inventario · Manípulos", "seccion": "Manípulos",
+        "unidad": "manípulo", "unidades": "manípulos",
         "tarjetas": [("c", "manipulos_terminados"), ("c", "manipulos_inter"),
                      ("c", "manipulos_reutilizables"), ("c", "manipulos_devueltos"),
                      ("c", "manipulos_enviados"), ("calc", "en_servicio", "Manípulos en servicio")],
@@ -120,7 +123,30 @@ def api(permiso):
     return deco
 
 
-# ---------- página ----------
+def _n(body, maximo=1000):
+    try:
+        n = int(body.get("n", 1))
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= maximo else None
+
+
+# ---------- páginas ----------
+@login_required
+def inicio(request):
+    tiles = []
+    for clave, M, url, icono, desc in [
+        ("ocarina", PiezaOcarina, "ocarines", "", "Piezas y materiales de las máquinas ocarine."),
+        ("manipulo", PiezaManipulo, "manipulos", "", "Piezas y materiales de los manípulos."),
+    ]:
+        piezas = list(M.objects.all())
+        tiles.append({"clave": clave, "url": url, "icono": icono, "desc": desc,
+                      "titulo": PAGINAS[clave]["seccion"], "total": len(piezas),
+                      "bajos": sum(1 for p in piezas if p.bajo)})
+    return render(request, "inventario/home.html", {
+        "tiles": tiles, "seccion": "inicio", "es_admin": es_admin(request.user)})
+
+
 @login_required
 def pagina(request, tabla):
     cfg = PAGINAS[tabla]
@@ -145,7 +171,9 @@ def pagina(request, tabla):
         elif t[0] == "calc":
             tarjetas.append({"etiqueta": t[2], "calc": t[1], "texto": res[t[1]]})
     return render(request, "inventario/tabla.html", {
-        "titulo": cfg["titulo"], "tabla": tabla, "columnas": columnas, "filas": filas,
+        "titulo": cfg["titulo"], "tabla": tabla, "seccion": tabla,
+        "nombre_seccion": cfg["seccion"], "unidad": cfg["unidad"], "unidades": cfg["unidades"],
+        "columnas": columnas, "filas": filas,
         "tarjetas": tarjetas, "quienes": [q[0] for q in QUIEN],
         "meta": campos_meta(M), "meta_contador": campos_meta(Contador),
         "es_admin": es_admin(request.user), "puede_rapida": puede_rapida(request.user),
@@ -178,6 +206,82 @@ def ajustar(request, body, tabla, pk):
         Movimiento.objects.create(usuario=request.user, tabla=tabla, codigo=codigo_de(obj),
                                   tipo="rapida", anterior=ant, nuevo=nuevo, detalle=campo)
     return JsonResponse({"fila": fila(obj), "resumen": resumen(grupo_de(tabla, obj))})
+
+
+@api(puede_rapida)
+def montar(request, body, tabla):
+    M = modelo(tabla)
+    if M is Contador:
+        raise Http404
+    n = _n(body)
+    if n is None:
+        return err("Cantidad no válida.")
+    forzar = bool(body.get("forzar")) and request.user.is_superuser
+    with transaction.atomic():
+        piezas = list(M.objects.select_for_update().filter(por_unidad__gt=0).order_by("pk"))
+        faltan = [p for p in piezas if p.restante < p.por_unidad * n]
+        if faltan and not forzar:
+            lista = ", ".join(f"{p.nombre} (hay {p.restante}, hacen falta {p.por_unidad * n})"
+                              for p in faltan[:5])
+            extra = f" y {len(faltan) - 5} más" if len(faltan) > 5 else ""
+            return err(f"No hay material suficiente: {lista}{extra}.", 409)
+        for p in piezas:
+            ant = p.restante
+            p.restante = ant - p.por_unidad * n
+            p.version += 1
+            p.save(update_fields=["restante", "version", "updated_at"])
+            Movimiento.objects.create(usuario=request.user, tabla=tabla, codigo=p.codigo,
+                                      tipo="montaje", anterior=ant, nuevo=p.restante,
+                                      detalle=f"Montaje de {n}")
+        c = Contador.objects.select_for_update().filter(clave=CONTADOR_MONTAJE[tabla]).first()
+        if c:
+            ant = c.valor
+            c.valor += n
+            c.version += 1
+            c.save(update_fields=["valor", "version", "updated_at"])
+            Movimiento.objects.create(usuario=request.user, tabla="contador", codigo=c.clave,
+                                      tipo="montaje", anterior=ant, nuevo=c.valor,
+                                      detalle=f"Montaje de {n}")
+    return JsonResponse({"filas": [fila(p) for p in piezas],
+                         "contador": fila(c) if c else None, "resumen": resumen(tabla)})
+
+
+@api(puede_rapida)
+def reciclar(request, body, tabla):
+    M = modelo(tabla)
+    if M is Contador:
+        raise Http404
+    n = _n(body)
+    if n is None:
+        return err("Cantidad no válida.")
+    try:
+        items = {int(k): int(v) for k, v in (body.get("items") or {}).items() if int(v) > 0}
+    except (TypeError, ValueError, AttributeError):
+        return err("Datos no válidos.")
+    if not items:
+        return err("No has marcado ninguna pieza recuperada.")
+    with transaction.atomic():
+        piezas = {p.pk: p for p in M.objects.select_for_update().filter(pk__in=items).order_by("pk")}
+        if len(piezas) != len(items):
+            return err("Alguna pieza ya no existe. Recarga la página.", 404)
+        for pk, q in items.items():           # primero validar todo
+            p = piezas[pk]
+            if q > p.por_unidad * n:
+                return err(f"{p.nombre}: el máximo recuperable es {p.por_unidad * n}.")
+        for pk in sorted(items):              # luego aplicar
+            p, q = piezas[pk], items[pk]
+            ant = p.restante
+            p.restante = ant + q
+            campos = ["restante", "version", "updated_at"]
+            if tabla == "manipulo":
+                p.reciclados += q
+                campos.append("reciclados")
+            p.version += 1
+            p.save(update_fields=campos)
+            Movimiento.objects.create(usuario=request.user, tabla=tabla, codigo=p.codigo,
+                                      tipo="reciclaje", anterior=ant, nuevo=p.restante,
+                                      detalle=f"+{q} recuperadas de {n}")
+    return JsonResponse({"filas": [fila(p) for p in piezas.values()], "resumen": resumen(tabla)})
 
 
 @api(es_admin)

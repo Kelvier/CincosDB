@@ -2,13 +2,15 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Entrar</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
+<title>Entrar · Cincos</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}"></head>
 <body class="login">
 <form method="post" class="login-box">{% csrf_token %}
-  <h1>Gestión de materiales</h1>
+  <div class="logo grande">C</div>
+  <h1>Cincos</h1>
+  <p class="sub">Gestión de materiales</p>
   {% if form.errors %}<p class="err">Usuario o contraseña incorrectos (o cuenta bloqueada temporalmente).</p>{% endif %}
   <label class="campo"><span>Usuario</span><input name="username" autofocus required autocomplete="username"></label>
   <label class="campo"><span>Contraseña</span><input type="password" name="password" required autocomplete="current-password"></label>
-  <button class="btn grande">Entrar</button>
+  <button class="btn ancho">Entrar</button>
 </form>
 </body></html>
