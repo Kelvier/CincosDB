@@ -655,3 +655,960 @@ svg.i {
   }
 }
 
+/* CINCOS INFORMES DE AVERIA */
+.averia-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:10px 0 22px}
+.averia-cabecera h1{margin:3px 0 8px}
+.averia-kicker{margin:0;color:var(--pri);font-weight:750;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em}
+.averia-panel{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:clamp(16px,3vw,24px);margin:0 0 18px;box-shadow:0 7px 24px rgba(15,23,42,.05);min-width:0}
+.averia-panel h2{font-size:1.12rem;margin:0 0 13px}
+.averia-panel h3{font-size:1rem;margin:0 0 5px}
+.averia-panel p{margin:6px 0}
+.averia-panel-head,.averia-piezas-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.averia-piezas-head{margin-top:22px;align-items:flex-start}
+.averia-datos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.averia-datos-grid>div{padding:14px;border-radius:12px;background:var(--bg);min-width:0}
+.averia-label{display:block;font-size:.8rem;color:var(--mut,#64748b);margin-bottom:5px}
+.averia-datos-grid strong{overflow-wrap:anywhere}
+.averia-texto{white-space:normal;line-height:1.65;overflow-wrap:anywhere}
+.averia-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.averia-campo{display:flex;flex-direction:column;gap:7px;min-width:0}
+.averia-campo>span{font-weight:650;font-size:.9rem}
+.averia-campo input,.averia-campo select,.averia-campo textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--bd);border-radius:10px;padding:11px 12px;background:var(--card);color:inherit;font:inherit}
+.averia-campo textarea{resize:vertical;min-height:110px}
+.averia-error{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;border-radius:10px;padding:12px 14px;margin:0 0 16px;line-height:1.5}
+.averia-lista{display:grid;gap:12px}
+.averia-item{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border:1px solid var(--bd);border-radius:14px;padding:15px;background:var(--card)}
+.averia-item-main{min-width:0;flex:1}
+.averia-item h3{margin:0 0 5px;font-size:1rem;overflow-wrap:anywhere}
+.averia-item p{margin:6px 0;line-height:1.5;overflow-wrap:anywhere}
+.averia-item small,.muted{color:var(--mut,#64748b);font-size:.82rem}
+.averia-lineas{display:grid;gap:10px}
+.averia-linea{display:grid;grid-template-columns:minmax(220px,2fr) minmax(90px,.65fr) minmax(125px,.9fr) auto;gap:10px;align-items:end;padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--bg)}
+.averia-aviso-stock{font-size:.84rem;color:var(--mut,#64748b);margin:12px 0 18px!important}
+.averia-form-acciones{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px;margin-top:16px}
+.averia-tabla{width:100%;border-collapse:collapse}
+.averia-tabla th,.averia-tabla td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--bd)}
+.averia-tabla th{font-size:.8rem;color:var(--mut,#64748b)}
+.pill.ambar{background:#fef3c7;color:#92400e}
+.averia-panel .btn,.averia-item .btn{white-space:normal}
+@media(max-width:760px){
+ .averia-cabecera,.averia-panel-head,.averia-piezas-head,.averia-item{flex-direction:column;align-items:stretch}
+ .averia-datos-grid,.averia-form-grid{grid-template-columns:minmax(0,1fr)}
+ .averia-linea{grid-template-columns:minmax(0,1fr) minmax(100px,.7fr)}
+ .averia-linea .averia-campo:first-child{grid-column:1/-1}
+ .averia-linea .quitar-linea-pieza{grid-column:1/-1;justify-self:start}
+ .averia-form-acciones{flex-direction:column-reverse;align-items:stretch}
+ .averia-form-acciones .btn{width:100%;text-align:center;justify-content:center}
+}
+
+/* CINCOS FORMULARIO AVERIAS LAYOUT FIX v1 */
+/* Formulario inicial: campos en columna, etiquetas encima y anchura controlada. */
+#vista-averias .averia-form-inicio {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  width: 100%;
+  max-width: 900px;
+  align-items: stretch;
+}
+#vista-averias .averia-form-inicio > .averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  grid-column: 1 / -1 !important;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+}
+#vista-averias .averia-form-inicio > .averia-campo > span {
+  display: block !important;
+  width: 100%;
+  margin: 0;
+  line-height: 1.4;
+}
+#vista-averias .averia-form-inicio .averia-campo input,
+#vista-averias .averia-form-inicio .averia-campo textarea {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#vista-averias #averia-serie { min-height: 48px; }
+#vista-averias #averia-descripcion { min-height: 155px; line-height: 1.55; }
+#vista-averias .averia-pasos {
+  border-left: 4px solid var(--pri, #6366f1);
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin: 14px 0 18px;
+  background: var(--bg, rgba(99,102,241,.08));
+  line-height: 1.55;
+}
+#vista-averias .averia-inicio-acciones {
+  display: flex !important;
+  grid-column: 1 / -1 !important;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+#vista-averias .averia-inicio-acciones .btn {
+  min-height: 48px;
+  padding: 12px 18px;
+  white-space: normal;
+}
+#vista-averias #averia-error { grid-column: 1 / -1 !important; }
+
+/* Formulario de reparación: comentario y piezas siempre apilados y legibles. */
+.averia-detalle #form-completar-averia > .averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px;
+  width: 100%;
+}
+.averia-detalle #form-completar-averia > .averia-campo > span {
+  display: block !important;
+  width: 100%;
+}
+.averia-detalle #form-completar-averia > .averia-campo textarea,
+.averia-detalle #form-completar-averia .averia-campo select,
+.averia-detalle #form-completar-averia .averia-campo input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.averia-detalle #form-completar-averia > .averia-campo textarea {
+  min-height: 155px;
+  line-height: 1.55;
+}
+@media (max-width: 640px) {
+  #vista-averias .averia-inicio-acciones {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  #vista-averias .averia-inicio-acciones .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* CINCOS AVERIA CENTRADO Y AVISO v1 */
+/* Contenido de detalle centrado y con anchura legible en escritorio. */
+body.averia-detalle > main,
+body.averia-detalle main {
+  width: calc(100% - 32px);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 0 40px;
+  box-sizing: border-box;
+}
+body.averia-detalle .crumb,
+body.averia-detalle .averia-cabecera {
+  width: 100%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+body.averia-detalle .averia-panel {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 18px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+body.averia-detalle #form-completar-averia {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 16px;
+  width: 100%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+body.averia-detalle #form-completar-averia > .averia-campo,
+body.averia-detalle #form-completar-averia .averia-linea > .averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  text-align: left !important;
+  box-sizing: border-box;
+}
+body.averia-detalle #form-completar-averia .averia-campo > span {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  line-height: 1.45;
+}
+body.averia-detalle #form-completar-averia .averia-campo textarea,
+body.averia-detalle #form-completar-averia .averia-campo select,
+body.averia-detalle #form-completar-averia .averia-campo input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle #form-completar-averia > .averia-campo textarea {
+  min-height: 150px;
+  line-height: 1.55;
+}
+body.averia-detalle .averia-lineas {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+body.averia-detalle .averia-linea {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(100px, .65fr) minmax(140px, .85fr) auto !important;
+  align-items: end !important;
+  gap: 12px !important;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 14px;
+  box-sizing: border-box;
+}
+body.averia-detalle .averia-linea > .quitar-linea-pieza {
+  align-self: end;
+  justify-self: end;
+  white-space: nowrap;
+  min-height: 42px;
+}
+body.averia-detalle .tabla-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.averia-detalle table.averia-tabla {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+body.averia-detalle .averia-form-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Mensaje de éxito al volver al menú principal. */
+.cincos-notificaciones {
+  width: calc(100% - 32px);
+  max-width: 1120px;
+  margin: 16px auto 20px;
+  box-sizing: border-box;
+}
+.cincos-notificacion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--bd, #334155);
+  border-radius: 12px;
+  background: var(--card, #1b2435);
+  color: inherit;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+  line-height: 1.5;
+}
+.cincos-notificacion-success {
+  background: #0f2d23;
+  border-color: #16805d;
+  color: #d1fae5;
+}
+.cincos-notificacion-error,
+.cincos-notificacion-danger {
+  background: #3b121a;
+  border-color: #be3455;
+  color: #ffe4e6;
+}
+.cincos-notificacion-info,
+.cincos-notificacion-warning {
+  border-color: #6478df;
+}
+.cincos-notificacion-texto { flex: 1; min-width: 0; }
+.cincos-notificacion-cerrar {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  cursor: pointer;
+}
+.cincos-notificacion-cerrar:hover { background: rgba(255,255,255,.1); }
+
+@media (max-width: 820px) {
+  body.averia-detalle > main,
+  body.averia-detalle main {
+    width: calc(100% - 24px);
+    padding-top: 16px;
+  }
+  body.averia-detalle .averia-panel { padding: 16px; }
+  body.averia-detalle .averia-linea {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "pieza pieza"
+      "cantidad origen"
+      "quitar quitar";
+    align-items: end !important;
+  }
+  body.averia-detalle .averia-linea > .averia-campo:first-child { grid-area: pieza; }
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(2) { grid-area: cantidad; }
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(3) { grid-area: origen; }
+  body.averia-detalle .averia-linea > .quitar-linea-pieza {
+    grid-area: quitar;
+    justify-self: end;
+  }
+}
+@media (max-width: 520px) {
+  body.averia-detalle > main,
+  body.averia-detalle main { width: calc(100% - 18px); }
+  body.averia-detalle .averia-linea {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "pieza" "cantidad" "origen" "quitar";
+    padding: 12px;
+  }
+  body.averia-detalle .averia-linea > .averia-campo:first-child,
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(2),
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(3) { grid-column: 1; }
+  body.averia-detalle .averia-form-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.averia-detalle .averia-form-acciones > .btn,
+  body.averia-detalle .averia-form-acciones > button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
+
+/* CINCOS-FORM-LAYOUT-FIX-v2
+   Layout robusto para formulario inicial y detalle de reparación. */
+
+/* Vista de creación: etiqueta arriba, control debajo y una sola columna. */
+body[data-tabla] #vista-averias {
+  width: 100%;
+  max-width: 1040px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+body[data-tabla] #vista-averias > .averia-panel {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto 18px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+body[data-tabla] #vista-averias #frm-averia {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 820px !important;
+  margin: 18px auto 0 !important;
+  box-sizing: border-box !important;
+}
+body[data-tabla] #vista-averias #frm-averia > .averia-campo,
+body[data-tabla] #vista-averias #frm-averia > label.averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+body[data-tabla] #vista-averias #frm-averia .averia-campo > span {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+body[data-tabla] #vista-averias #frm-averia input,
+body[data-tabla] #vista-averias #frm-averia textarea,
+body[data-tabla] #vista-averias #frm-averia select {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+body[data-tabla] #vista-averias #frm-averia input { min-height: 46px; }
+body[data-tabla] #vista-averias #frm-averia textarea {
+  min-height: 150px !important;
+  resize: vertical;
+  line-height: 1.55;
+}
+body[data-tabla] #vista-averias #frm-averia .averia-form-acciones {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+body[data-tabla] #vista-averias #frm-averia #averia-error {
+  grid-column: 1 / -1 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Detalle: contenido centrado, campos apilados y piezas alineadas. */
+body.averia-detalle > main {
+  display: block;
+  width: calc(100% - 32px) !important;
+  max-width: 1080px !important;
+  margin: 0 auto !important;
+  padding: 24px 0 42px !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle .crumb,
+body.averia-detalle .averia-cabecera,
+body.averia-detalle main > .averia-panel {
+  width: 100% !important;
+  max-width: 960px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle #form-completar-averia {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  width: 100% !important;
+  max-width: 960px !important;
+  margin: 0 auto 18px !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle #form-completar-averia .averia-campo,
+body.averia-detalle #form-completar-averia label.averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle #form-completar-averia .averia-campo > span {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+body.averia-detalle #form-completar-averia textarea,
+body.averia-detalle #form-completar-averia select,
+body.averia-detalle #form-completar-averia input {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle #form-completar-averia textarea[name="reparacion_realizada"] {
+  min-height: 170px !important;
+  line-height: 1.55;
+}
+body.averia-detalle .averia-piezas-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  margin-top: 8px !important;
+}
+body.averia-detalle .averia-lineas {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle .averia-linea {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(110px, .7fr) minmax(145px, .9fr) auto !important;
+  align-items: end !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  box-sizing: border-box !important;
+}
+body.averia-detalle .averia-linea > .averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+body.averia-detalle .averia-linea .quitar-linea-pieza {
+  align-self: end !important;
+  justify-self: end !important;
+  white-space: nowrap;
+  min-height: 42px;
+}
+body.averia-detalle .averia-form-acciones {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin-top: 8px !important;
+}
+
+/* El aviso de éxito debe verse también en el menú principal. */
+.cincos-notificaciones {
+  display: grid;
+  gap: 10px;
+  width: calc(100% - 32px);
+  max-width: 1080px;
+  margin: 16px auto 20px;
+  box-sizing: border-box;
+}
+.cincos-notificacion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--bd, #334155);
+  border-radius: 12px;
+  background: var(--card, #1b2435);
+  color: inherit;
+  line-height: 1.5;
+}
+.cincos-notificacion-success {
+  color: #d1fae5;
+  background: #0f2d23;
+  border-color: #16805d;
+}
+.cincos-notificacion-texto { flex: 1; min-width: 0; }
+.cincos-notificacion-cerrar { flex: 0 0 auto; cursor: pointer; }
+
+@media (max-width: 820px) {
+  body.averia-detalle > main { width: calc(100% - 24px) !important; padding-top: 16px !important; }
+  body.averia-detalle .averia-linea {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas: "pieza pieza" "cantidad origen" "quitar quitar";
+  }
+  body.averia-detalle .averia-linea > .averia-campo:first-child { grid-area: pieza; }
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(2) { grid-area: cantidad; }
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(3) { grid-area: origen; }
+  body.averia-detalle .averia-linea > .quitar-linea-pieza { grid-area: quitar; justify-self: end !important; }
+}
+@media (max-width: 520px) {
+  body[data-tabla] #vista-averias #frm-averia .averia-form-acciones,
+  body.averia-detalle .averia-form-acciones { flex-direction: column !important; align-items: stretch !important; }
+  body[data-tabla] #vista-averias #frm-averia .averia-form-acciones > *,
+  body.averia-detalle .averia-form-acciones > * { width: 100%; box-sizing: border-box; text-align: center; }
+  body.averia-detalle .averia-linea {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "pieza" "cantidad" "origen" "quitar";
+  }
+  body.averia-detalle .averia-linea > .averia-campo:first-child,
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(2),
+  body.averia-detalle .averia-linea > .averia-campo:nth-child(3) { grid-column: 1; }
+}
+
+
+
+/* CINCOS-AVERIA-FORM-FIX-v3 */
+
+/* Contenido centrado y con el mismo ancho de referencia */
+html body.averia-detalle > main,
+html body #vista-averias {
+  display: block !important;
+  width: calc(100% - 48px) !important;
+  max-width: 1100px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  float: none !important;
+  box-sizing: border-box !important;
+}
+
+html body.averia-detalle .crumb,
+html body.averia-detalle .averia-cabecera,
+html body.averia-detalle main > .averia-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Crear informe: etiquetas encima de sus campos */
+html body #vista-averias form#frm-averia {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  width: 100% !important;
+  max-width: 820px !important;
+  margin: 22px auto !important;
+  float: none !important;
+  box-sizing: border-box !important;
+}
+
+html body #vista-averias form#frm-averia label.averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+html body #vista-averias form#frm-averia label.averia-campo > span {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+html body #vista-averias form#frm-averia input,
+html body #vista-averias form#frm-averia textarea {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  box-sizing: border-box !important;
+}
+
+html body #vista-averias form#frm-averia input {
+  min-height: 46px !important;
+}
+
+html body #vista-averias form#frm-averia textarea {
+  min-height: 155px !important;
+  line-height: 1.55 !important;
+}
+
+/* Detalle de reparación: apilar los bloques */
+html body.averia-detalle form#form-completar-averia.averia-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 22px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 20px 0 !important;
+  float: none !important;
+  box-sizing: border-box !important;
+}
+
+html body.averia-detalle form#form-completar-averia > label.averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+html body.averia-detalle form#form-completar-averia .averia-campo > span {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+
+html body.averia-detalle form#form-completar-averia textarea,
+html body.averia-detalle form#form-completar-averia select,
+html body.averia-detalle form#form-completar-averia input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  float: none !important;
+  box-sizing: border-box !important;
+}
+
+html body.averia-detalle form#form-completar-averia textarea[name="reparacion_realizada"] {
+  min-height: 160px !important;
+  line-height: 1.55 !important;
+}
+
+/* Piezas: una fila alineada con columnas consistentes */
+html body.averia-detalle #form-completar-averia .averia-lineas {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body.averia-detalle #form-completar-averia .averia-linea {
+  display: grid !important;
+  grid-template-columns:
+    minmax(0, 2fr) minmax(100px, .6fr)
+    minmax(120px, .8fr) auto !important;
+  grid-template-areas: "pieza cantidad origen quitar" !important;
+  align-items: end !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 1px solid var(--border, #303b50) !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+}
+
+html body.averia-detalle #form-completar-averia .averia-linea > .averia-campo {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  grid-column: auto !important;
+  float: none !important;
+}
+
+html body.averia-detalle .averia-linea > .averia-campo:first-child {
+  grid-area: pieza !important;
+}
+
+html body.averia-detalle .averia-linea > .averia-campo:nth-child(2) {
+  grid-area: cantidad !important;
+}
+
+html body.averia-detalle .averia-linea > .averia-campo:nth-child(3) {
+  grid-area: origen !important;
+}
+
+html body.averia-detalle .averia-linea > .quitar-linea-pieza {
+  grid-area: quitar !important;
+  justify-self: start !important;
+  align-self: end !important;
+}
+
+html body.averia-detalle .averia-piezas-head {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+}
+
+html body.averia-detalle .averia-form-acciones {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  html body.averia-detalle > main,
+  html body #vista-averias {
+    width: calc(100% - 24px) !important;
+  }
+
+  html body.averia-detalle form#form-completar-averia.averia-panel {
+    padding: 16px !important;
+  }
+
+  html body.averia-detalle #form-completar-averia .averia-linea {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "pieza" "cantidad" "origen" "quitar" !important;
+  }
+
+  html body.averia-detalle .averia-form-acciones {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  html body.averia-detalle .averia-form-acciones > * {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+}
+
+/* CINCOS-TABS-HIDDEN-FIX-v1 */
+/* Respeta la visibilidad de las pestañas controlada por JavaScript */
+html body .vista[hidden],
+html body #vista-averias[hidden] {
+  display: none !important;
+}
+
+
+/* CINCOS-TABS-VISIBILITY-v2 */
+
+/* El formulario de averías solo se muestra en su pestaña */
+body.modo-rapida #vista-averias,
+body.modo-montar #vista-averias,
+body.modo-reciclar #vista-averias,
+body.modo-avanzada #vista-averias,
+body.modo-ver #vista-averias {
+  display: none !important;
+}
+
+/* Mostrarlo únicamente cuando el modo activo es averías */
+body.modo-averias #vista-averias:not([hidden]) {
+  display: block !important;
+}
+
+
+
+/* CINCOS-INFORMES-GLOBALES-CSS-v1 */
+.informes-page {
+  width: min(1100px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 28px 0 48px;
+  box-sizing: border-box;
+}
+.informes-page .crumb { margin-bottom: 22px; }
+.informes-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  margin: 0 0 26px; padding: 26px; border: 1px solid #2d3a51; border-radius: 18px;
+  background: linear-gradient(135deg, #192437, #141c2b); box-sizing: border-box;
+}
+.informes-kicker { margin: 0 0 8px; color: #929fff; font-size: .72rem; font-weight: 800; letter-spacing: .13em; }
+.informes-header h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2.25rem); }
+.informes-intro { max-width: 680px; margin: 10px 0 0; color: #aebbd0; line-height: 1.6; }
+.informes-counter { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 112px; min-height: 100px; padding: 12px; border: 1px solid #33445f;
+  border-radius: 15px; background: #101827; box-sizing: border-box; }
+.informes-counter strong { color: #c4caff; font-size: 2.2rem; line-height: 1.1; }
+.informes-counter span { margin-top: 6px; color: #aebbd0; font-size: .82rem; }
+.informes-lista { display: grid; gap: 14px; }
+.informe-pendiente-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px;
+  padding: 22px 24px; border: 1px solid #2d3a51; border-radius: 16px;
+  background: #182234; box-sizing: border-box;
+  transition: border-color .18s ease, transform .18s ease;
+}
+.informe-pendiente-card:hover { border-color: #6264ed; transform: translateY(-1px); }
+.informe-pendiente-contenido { min-width: 0; }
+.informe-pendiente-etiquetas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.informe-id { color: #8998b2; font-size: .82rem; font-weight: 700; }
+.informe-pendiente-card h2 { margin: 12px 0 4px; font-size: 1.2rem; overflow-wrap: anywhere; }
+.informe-equipo { margin: 0; color: #a7b2ff; font-size: .9rem; font-weight: 700; }
+.informe-descripcion { margin: 12px 0; color: #e1e6f0; line-height: 1.55; overflow-wrap: anywhere; }
+.informe-meta { margin: 0; color: #91a0b9; font-size: .82rem; line-height: 1.5; }
+.informe-pendiente-acciones { display: flex; flex-direction: column; align-items: stretch; gap: 12px; min-width: 190px; }
+.informe-pendiente-acciones .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-align: center; white-space: normal; }
+.informe-ver-modelo { color: #aebaff; text-align: center; font-size: .85rem; text-decoration: none; }
+.informe-ver-modelo:hover { text-decoration: underline; }
+.informes-vacio { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 52px 24px;
+  border: 1px dashed #3b4a63; border-radius: 18px; background: #151e2d; }
+.informes-vacio-icono { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(16, 185, 129, .14); color: #42d6aa; font-size: 1.8rem; }
+.informes-vacio h2 { margin: 18px 0 8px; }
+.informes-vacio p { max-width: 600px; color: #aebbd0; line-height: 1.6; }
+.informes-vacio .btn { margin-top: 10px; }
+@media (max-width: 700px) {
+  .informes-page { width: calc(100% - 24px); padding-top: 18px; }
+  .informes-header { align-items: stretch; flex-direction: column; padding: 20px; gap: 16px; }
+  .informes-counter { flex-direction: row; justify-content: flex-start; gap: 12px; min-height: auto; min-width: 0; }
+  .informes-counter span { margin-top: 0; }
+  .informe-pendiente-card { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 18px; }
+  .informe-pendiente-acciones { min-width: 0; width: 100%; }
+  .informe-pendiente-acciones .btn { width: 100%; box-sizing: border-box; }
+}
+
+
+/* CINCOS-INFORMES-COMPLETADOS-CSS-v1 */
+.informes-subseccion { margin-top: 32px; }
+.informes-subseccion-cabecera {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px 20px; margin: 0 0 16px;
+}
+.informes-subseccion-cabecera h2 { margin: 0; font-size: clamp(1.15rem, 2vw, 1.45rem); }
+.informes-subseccion-cabecera p { margin: 6px 0 0; color: #aebbd0; line-height: 1.5; }
+.informes-cuenta {
+  display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  padding: 7px 11px; border-radius: 999px; font-size: .8rem; font-weight: 750;
+  border: 1px solid #394760; background: #101827; color: #cbd5e1;
+}
+.informes-cuenta-pendiente { border-color: rgba(245, 158, 11, .35); background: rgba(245, 158, 11, .09); color: #fcd34d; }
+.informes-cuenta-completado { border-color: rgba(16, 185, 129, .35); background: rgba(16, 185, 129, .09); color: #6ee7b7; }
+.informe-completado-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px;
+  padding: 22px 24px; border: 1px solid #2d3a51; border-radius: 16px;
+  background: #151f2e; box-sizing: border-box;
+  transition: border-color .18s ease, transform .18s ease;
+}
+.informe-completado-card:hover { border-color: #10b981; transform: translateY(-1px); }
+.informe-completado-card h3 { margin: 12px 0 4px; font-size: 1.2rem; overflow-wrap: anywhere; }
+.informe-completado-card .informe-reparacion-resumen { margin-top: -4px; }
+.informes-vacio-compacto { padding: 28px 20px; }
+.informes-vacio-compacto h3 { margin: 12px 0 4px; }
+.informes-vacio-compacto p { margin: 6px 0 0; }
+.informes-vacio-icono-neutral { background: rgba(148, 163, 184, .12); color: #aebbd0; }
+@media (max-width: 700px) {
+  .informes-subseccion { margin-top: 24px; }
+  .informes-subseccion-cabecera { align-items: flex-start; }
+  .informe-completado-card { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 18px; }
+  .informe-completado-card .informe-pendiente-acciones { min-width: 0; width: 100%; }
+  .informe-completado-card .informe-pendiente-acciones .btn { width: 100%; box-sizing: border-box; }
+}

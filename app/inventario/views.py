@@ -6,12 +6,15 @@ from django.contrib.auth.decorators import login_required
 from django.db import models, transaction
 from django.forms import modelform_factory
 from django.http import Http404, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.urls import reverse
-from django.utils import formats
+from django.utils import formats, timezone
 
-from .models import (OC_VARIANTES, QUIEN, VARIANTES, Contador, Movimiento, PiezaManipulo,
-                     PiezaOcarina, Uso, UsoOcarina)
+from .models import (OC_VARIANTES, QUIEN, VARIANTES, Contador, InformeAveria, Movimiento,
+                     PiezaInformeAveria, PiezaManipulo, PiezaOcarina, Uso, UsoOcarina)
+
+from .models import ORIGENES_PIEZA_AVERIA
 
 TABLAS = {"ocarina": PiezaOcarina, "manipulo": PiezaManipulo, "contador": Contador}
 USOS = {"ocarina": UsoOcarina, "manipulo": Uso}
@@ -64,6 +67,9 @@ def es_admin(u):
 
 def puede_rapida(u):
     return u.is_authenticated and (u.is_superuser or u.groups.filter(name="Operario").exists())
+
+def puede_modificar_inventario(u):
+    return u.is_authenticated
 
 
 # ---------- utilidades ----------
@@ -246,11 +252,14 @@ def pagina(request, tabla, variante=None):
         "tarjetas": tarjetas, "quienes": [q[0] for q in QUIEN],
         "meta": campos_meta(M), "meta_contador": campos_meta(Contador),
         "es_admin": es_admin(request.user), "puede_rapida": puede_rapida(request.user),
+        "puede_modificar_inventario": puede_modificar_inventario(request.user),
+        "informes_pendientes": InformeAveria.objects.filter(tabla=tabla, variante=variante, estado="pendiente").select_related("creado_por").order_by("-creado_en"),
+        "informes_completados": InformeAveria.objects.filter(tabla=tabla, variante=variante, estado="completada").select_related("creado_por", "reparado_por").order_by("-completado_en")[:10],
     })
 
 
 # ---------- API ----------
-@api(puede_rapida)
+@api(puede_modificar_inventario)
 def ajustar(request, body, tabla, pk):
     M = modelo(tabla)
     var = var_de(body, tabla)
@@ -442,3 +451,218 @@ def borrar(request, body, tabla, pk):
             detalle=f"{obj.nombre} (restante {obj.restante})")
         obj.delete()
     return JsonResponse({"ok": True})
+
+# ---------- Informes de avería ----------
+def _contexto_informe_averia(informe, lineas_formulario=None, error="", reparacion_form=None):
+    M = modelo(informe.tabla)
+    uso_modelo = USOS[informe.tabla]
+    ids = uso_modelo.objects.filter(variante=informe.variante, cantidad__gt=0).values_list("pieza_id", flat=True)
+    piezas_disponibles = M.objects.filter(pk__in=ids).order_by("codigo")
+    if lineas_formulario is None:
+        lineas_formulario = [{"pieza": "", "cantidad": "", "origen": "nueva"}]
+    if not lineas_formulario:
+        lineas_formulario = [{"pieza": "", "cantidad": "", "origen": "nueva"}]
+    cfg = PAGINAS[informe.tabla]
+    if informe.tabla == "ocarina":
+        volver_url = reverse("ocarina_var", args=[informe.variante])
+    else:
+        volver_url = reverse("manipulo_var", args=[informe.variante])
+    return {
+        "informe": informe,
+        "piezas_disponibles": piezas_disponibles,
+        "lineas_formulario": lineas_formulario,
+        "error": error,
+        "reparacion_form": informe.reparacion_realizada if reparacion_form is None else reparacion_form,
+        "nombre_variante": VARS[informe.tabla].get(informe.variante, informe.variante),
+        "nombre_seccion": cfg["seccion"],
+        "volver_url": volver_url,
+        "seccion": informe.tabla,
+    }
+
+
+@api(puede_modificar_inventario)
+def crear_averia(request, body):
+    tabla = body.get("tabla")
+    variante = body.get("variante")
+    if tabla not in PAGINAS or variante not in VARS.get(tabla, {}):
+        return err("Selecciona un equipo y un modelo válidos.")
+    numero_serie = str(body.get("numero_serie", "")).strip()
+    descripcion = str(body.get("descripcion_averia", "")).strip()
+    if not numero_serie:
+        return err("El número de serie es obligatorio.")
+    if len(numero_serie) > 100:
+        return err("El número de serie no puede superar los 100 caracteres.")
+    if not descripcion:
+        return err("Describe la avería antes de guardar el informe.")
+    informe = InformeAveria.objects.create(
+        tabla=tabla, variante=variante, numero_serie=numero_serie,
+        descripcion_averia=descripcion, creado_por=request.user,
+    )
+    return JsonResponse({"ok": True, "id": informe.pk,
+                         "mensaje": "Informe guardado como pendiente de reparación."}, status=201)
+
+
+def averia_detalle(request, pk):
+    if not request.user.is_authenticated:
+        return redirect(f"/login/?next={request.path}")
+    informe = get_object_or_404(
+        InformeAveria.objects.select_related("creado_por", "reparado_por").prefetch_related("piezas"), pk=pk
+    )
+    if request.method == "GET":
+        return render(request, "inventario/averia_detalle.html", _contexto_informe_averia(informe))
+
+    if informe.estado != "pendiente":
+        return render(request, "inventario/averia_detalle.html",
+                      _contexto_informe_averia(informe, error="Este informe ya ha sido completado."), status=409)
+
+    reparacion = request.POST.get("reparacion_realizada", "").strip()
+    ids_post = request.POST.getlist("pieza")
+    cantidades_post = request.POST.getlist("cantidad")
+    origenes_post = request.POST.getlist("origen")
+    filas = []
+    errores_form = []
+    for i in range(max(len(ids_post), len(cantidades_post), len(origenes_post))):
+        pieza_id = ids_post[i].strip() if i < len(ids_post) else ""
+        cantidad_txt = cantidades_post[i].strip() if i < len(cantidades_post) else ""
+        origen = origenes_post[i].strip() if i < len(origenes_post) else "nueva"
+        if not pieza_id and not cantidad_txt:
+            continue
+        if not pieza_id:
+            errores_form.append(f"Fila {i + 1}: selecciona una pieza.")
+            continue
+        try:
+            pieza_id_int = int(pieza_id)
+            cantidad = int(cantidad_txt)
+        except (TypeError, ValueError):
+            errores_form.append(f"Fila {i + 1}: selecciona una pieza y una cantidad válida.")
+            continue
+        if cantidad < 1 or cantidad > 100000:
+            errores_form.append(f"Fila {i + 1}: la cantidad debe estar entre 1 y 100.000.")
+            continue
+        if origen not in dict(ORIGENES_PIEZA_AVERIA):
+            errores_form.append(f"Fila {i + 1}: el origen de la pieza no es válido.")
+            continue
+        filas.append({"pieza": pieza_id_int, "cantidad": cantidad, "origen": origen})
+
+    if not reparacion:
+        errores_form.append("Describe la reparación realizada.")
+    if errores_form:
+        return render(request, "inventario/averia_detalle.html",
+                      _contexto_informe_averia(informe, _filas_formulario(ids_post, cantidades_post, origenes_post),
+                                               " ".join(errores_form), reparacion), status=400)
+
+    error = ""
+    informe_id = informe.pk
+    with transaction.atomic():
+        informe = InformeAveria.objects.select_for_update().get(pk=informe_id)
+        if informe.estado != "pendiente":
+            error = "Otra persona ya ha completado este informe. Recarga la página para ver el resultado."
+        else:
+            M = modelo(informe.tabla)
+            uso_modelo = USOS[informe.tabla]
+            ids_permitidos = set(uso_modelo.objects.filter(
+                variante=informe.variante, cantidad__gt=0
+            ).values_list("pieza_id", flat=True))
+            ids_solicitados = {fila["pieza"] for fila in filas}
+            if not ids_solicitados.issubset(ids_permitidos):
+                error = "Una de las piezas no pertenece al modelo seleccionado. No se ha modificado el inventario."
+            else:
+                piezas = {p.pk: p for p in M.objects.select_for_update().filter(pk__in=ids_solicitados).order_by("pk")}
+                if len(piezas) != len(ids_solicitados):
+                    error = "Una de las piezas ya no existe. Recarga el formulario. No se ha modificado el inventario."
+                else:
+                    totales = {}
+                    for linea in filas:
+                        totales[linea["pieza"]] = totales.get(linea["pieza"], 0) + linea["cantidad"]
+                    insuficientes = [p for pk, p in piezas.items() if p.restante < totales.get(pk, 0)]
+                    if insuficientes:
+                        error = "Stock insuficiente: " + "; ".join(
+                            f"{p.codigo} — {p.nombre}: hay {p.restante}, hacen falta {totales[p.pk]}"
+                            for p in insuficientes
+                        ) + ". No se ha descontado ninguna pieza."
+                    else:
+                        detalles_movimiento = {pk: [] for pk in piezas}
+                        for linea in filas:
+                            detalles_movimiento[linea["pieza"]].append(linea)
+                        for pk in sorted(piezas):
+                            p = piezas[pk]
+                            anterior = p.restante
+                            p.restante -= totales[pk]
+                            p.version += 1
+                            p.save(update_fields=["restante", "version", "updated_at"])
+                            detalle_lineas = ", ".join(
+                                f"{linea['cantidad']} {dict(ORIGENES_PIEZA_AVERIA)[linea['origen']].lower()}"
+                                for linea in detalles_movimiento[pk]
+                            )
+                            mov(request, tabla=informe.tabla, codigo=p.codigo, tipo="averia",
+                                anterior=anterior, nuevo=p.restante,
+                                detalle=f"Informe #{informe.pk}, serie {informe.numero_serie}: {detalle_lineas}")
+                        for linea in filas:
+                            p = piezas[linea["pieza"]]
+                            PiezaInformeAveria.objects.create(
+                                informe=informe, pieza_id_inventario=p.pk, pieza_codigo=p.codigo,
+                                pieza_nombre=p.nombre, cantidad=linea["cantidad"], origen=linea["origen"]
+                            )
+                        informe.reparacion_realizada = reparacion
+                        informe.estado = "completada"
+                        informe.reparado_por = request.user
+                        informe.completado_en = timezone.now()
+                        informe.save(update_fields=["reparacion_realizada", "estado", "reparado_por",
+                                                     "completado_en", "actualizado_en"])
+
+    if error:
+        return render(request, "inventario/averia_detalle.html",
+                      _contexto_informe_averia(informe, filas, error, reparacion), status=409)
+    # CINCOS-AVERIA-CIERRE-REDIRECT-v1
+    messages.success(request, f"El informe de avería #{informe_id} se ha cerrado correctamente.")
+    return redirect("inicio")
+
+
+def _filas_formulario(ids_post, cantidades_post, origenes_post):
+    filas = []
+    for i in range(max(len(ids_post), len(cantidades_post), len(origenes_post))):
+        filas.append({
+            "pieza": ids_post[i] if i < len(ids_post) else "",
+            "cantidad": cantidades_post[i] if i < len(cantidades_post) else "",
+            "origen": origenes_post[i] if i < len(origenes_post) else "nueva",
+        })
+    return filas or [{"pieza": "", "cantidad": "", "origen": "nueva"}]
+
+# CINCOS-INFORMES-GLOBALES-v1
+@login_required
+def informes(request):
+    """Lista global de averías pendientes y reparaciones completadas."""
+    pendientes = list(
+        InformeAveria.objects.filter(estado="pendiente")
+        .select_related("creado_por")
+        .order_by("-creado_en", "-pk")
+    )
+    completados = list(
+        InformeAveria.objects.filter(estado="completada")
+        .select_related("creado_por", "reparado_por")
+        .order_by("-completado_en", "-pk")
+    )
+
+    # Añadir nombres visibles y enlace de vuelta al modelo para ambas listas.
+    for informe in pendientes + completados:
+        cfg = PAGINAS.get(informe.tabla, {})
+        informe.nombre_seccion = cfg.get("seccion", informe.get_tabla_display())
+        informe.nombre_variante = VARS.get(informe.tabla, {}).get(
+            informe.variante, informe.variante.capitalize()
+        )
+        ruta_var = cfg.get("ruta_var")
+        variantes_validas = VARS.get(informe.tabla, {})
+        if ruta_var and informe.variante in variantes_validas:
+            informe.url_modelo = reverse(ruta_var, args=[informe.variante])
+        else:
+            informe.url_modelo = reverse("inicio")
+
+    return render(request, "inventario/informes.html", {
+        "seccion": "informes",
+        "pendientes": pendientes,
+        "total_pendientes": len(pendientes),
+        "completados": completados,
+        "total_completados": len(completados),
+    })
+
+

@@ -1,0 +1,83 @@
+{% load static %}
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Informes de avería · Cincos</title>
+<link rel="stylesheet" href="{% static 'inventario/app.css' %}?v=cincos-informes-globales-v2">
+{% include "inventario/_pwa.html" %}</head>
+<body>
+{% include "inventario/_topbar.html" %}
+<main class="informes-page">
+  <div class="crumb"><a href="{% url 'inicio' %}">Inicio</a> / Informes</div>
+  <header class="informes-header">
+    <div><p class="informes-kicker">MANTENIMIENTO · SEGUIMIENTO</p><h1>Informes de avería</h1>
+      <p class="informes-intro">Consulta las averías pendientes de reparar y el historial de reparaciones finalizadas de todos los modelos de Ocarine y Manípulo.</p></div>
+    <div class="informes-counter"><strong>{{ total_pendientes }}</strong><span>Pendiente{{ total_pendientes|pluralize:"s" }}</span></div>
+  </header>
+
+  <section class="informes-subseccion" aria-labelledby="titulo-pendientes">
+    <div class="informes-subseccion-cabecera">
+      <div><h2 id="titulo-pendientes">Informes pendientes</h2><p>Reparaciones que todavía necesitan atención.</p></div>
+      <span class="informes-cuenta informes-cuenta-pendiente">{{ total_pendientes }} pendiente{{ total_pendientes|pluralize:"s" }}</span>
+    </div>
+    {% if pendientes %}
+      <section class="informes-lista" aria-label="Informes pendientes de reparación">
+        {% for inf in pendientes %}
+        <article class="informe-pendiente-card">
+          <div class="informe-pendiente-contenido">
+            <div class="informe-pendiente-etiquetas"><span class="pill ambar">Pendiente</span><span class="informe-id">Informe #{{ inf.pk }}</span></div>
+            <h3>Serie {{ inf.numero_serie }}</h3>
+            <p class="informe-equipo">{{ inf.nombre_seccion }} · {{ inf.nombre_variante }}</p>
+            <p class="informe-descripcion">{{ inf.descripcion_averia|truncatechars:240 }}</p>
+            <p class="informe-meta">Creado por <strong>{{ inf.creado_por.username|default:"usuario desconocido" }}</strong> · {{ inf.creado_en|date:"d/m/Y H:i" }}</p>
+          </div>
+          <div class="informe-pendiente-acciones">
+            <a class="btn accion" href="{% url 'averia_detalle' inf.pk %}">Continuar reparación <span aria-hidden="true">→</span></a>
+            <a class="informe-ver-modelo" href="{{ inf.url_modelo }}">Ver modelo</a>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+    {% else %}
+      <section class="informes-vacio informes-vacio-compacto">
+        <span class="informes-vacio-icono" aria-hidden="true">✓</span>
+        <h3>No hay informes pendientes</h3>
+        <p>Cuando se registre una nueva avería pendiente, aparecerá aquí.</p>
+      </section>
+    {% endif %}
+  </section>
+
+  <section class="informes-subseccion informes-completados" aria-labelledby="titulo-completados">
+    <div class="informes-subseccion-cabecera">
+      <div><h2 id="titulo-completados">Informes completados</h2><p>Reparaciones finalizadas recientemente.</p></div>
+      <span class="informes-cuenta informes-cuenta-completado">{{ total_completados }} completado{{ total_completados|pluralize:"s" }}</span>
+    </div>
+    {% if completados %}
+      <section class="informes-lista" aria-label="Informes de avería completados">
+        {% for inf in completados %}
+        <article class="informe-completado-card">
+          <div class="informe-pendiente-contenido">
+            <div class="informe-pendiente-etiquetas"><span class="pill verde">Completado</span><span class="informe-id">Informe #{{ inf.pk }}</span></div>
+            <h3>Serie {{ inf.numero_serie }}</h3>
+            <p class="informe-equipo">{{ inf.nombre_seccion }} · {{ inf.nombre_variante }}</p>
+            <p class="informe-descripcion"><strong>Avería:</strong> {{ inf.descripcion_averia|truncatechars:180 }}</p>
+            <p class="informe-descripcion informe-reparacion-resumen"><strong>Reparación:</strong> {{ inf.reparacion_realizada|default:"Sin descripción de reparación"|truncatechars:200 }}</p>
+            <p class="informe-meta">Reparado por <strong>{{ inf.reparado_por.username|default:"usuario desconocido" }}</strong>{% if inf.completado_en %} · {{ inf.completado_en|date:"d/m/Y H:i" }}{% endif %}</p>
+          </div>
+          <div class="informe-pendiente-acciones">
+            <a class="btn sec" href="{% url 'averia_detalle' inf.pk %}">Ver informe <span aria-hidden="true">→</span></a>
+            <a class="informe-ver-modelo" href="{{ inf.url_modelo }}">Ver modelo</a>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+    {% else %}
+      <section class="informes-vacio informes-vacio-compacto">
+        <span class="informes-vacio-icono informes-vacio-icono-neutral" aria-hidden="true">✓</span>
+        <h3>Aún no hay informes completados</h3>
+        <p>Cuando se cierre una reparación, su informe aparecerá en esta sección.</p>
+      </section>
+    {% endif %}
+  </section>
+</main>
+</body></html>

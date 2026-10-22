@@ -7,6 +7,18 @@
 <body>
 {% include "inventario/_topbar.html" %}
 <main>
+
+  {% if messages %}
+  <!-- CINCOS-MENSAJES-OPERACION-v1 -->
+  <section class="cincos-notificaciones" aria-live="polite" aria-atomic="true">
+    {% for message in messages %}
+    <div class="cincos-notificacion cincos-notificacion-{{ message.tags|default:'info' }}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}">
+      <span class="cincos-notificacion-texto">{% if 'success' in message.tags %}<strong>Operación completada.</strong> {% endif %}{{ message }}</span>
+      <button class="cincos-notificacion-cerrar" type="button" aria-label="Cerrar aviso" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
   <section class="hero">
     <h1>Hola, {{ request.user.username }}</h1>
     <p>¿Con qué quieres trabajar hoy?</p>
@@ -22,7 +34,8 @@
         <span class="{% if t.bajos %}alerta{% endif %}"><b>{{ t.bajos }}</b> con poco material</span>
       </div>
       <div class="tile-ops">
-        <span><svg class="i"><use href="#i-wrench"/></svg>Reparación</span>
+        <span><svg class="i"><use href="#i-wrench"/></svg>Modificar inventario</span>
+        <span><svg class="i"><use href="#i-alert"/></svg>Informe de avería</span>
         <span><svg class="i"><use href="#i-factory"/></svg>Montar</span>
         <span><svg class="i"><use href="#i-recycle"/></svg>Reciclar</span>
         {% if es_admin %}<span><svg class="i"><use href="#i-sliders"/></svg>Avanzada</span>{% endif %}

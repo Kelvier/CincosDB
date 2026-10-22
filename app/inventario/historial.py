@@ -18,6 +18,7 @@ TIPOS = {
     "avanzada": ("Edición avanzada", "gris"),
     "alta": ("Alta de pieza", "gris"),
     "baja": ("Baja de pieza", "rojo"),
+    "averia": ("Informe de avería", "rojo"),
     "deshacer": ("Deshacer", "rojo"),
 }
 SECCIONES = {"ocarina": "Ocarines", "manipulo": "Manípulos"}

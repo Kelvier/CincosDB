@@ -113,3 +113,59 @@ class UsoOcarina(models.Model):
         unique_together = [("pieza", "variante")]
         verbose_name = "pieza por variante de ocarine"
         verbose_name_plural = "piezas por variante de ocarine"
+
+# ---------- Informes de avería ----------
+ESTADOS_INFORME_AVERIA = [
+    ("pendiente", "Pendiente de reparación"),
+    ("completada", "Reparación completada"),
+]
+ORIGENES_PIEZA_AVERIA = [
+    ("nueva", "Nueva"),
+    ("reciclada", "Reciclada"),
+]
+
+
+class InformeAveria(models.Model):
+    """Informe iniciado por un usuario y completado por quien realiza la reparación."""
+    TABLAS = [("ocarina", "Ocarine"), ("manipulo", "Manípulo")]
+
+    tabla = models.CharField("Equipo", max_length=10, choices=TABLAS)
+    variante = models.CharField("Modelo", max_length=15)
+    numero_serie = models.CharField("Número de serie", max_length=100)
+    descripcion_averia = models.TextField("Descripción de la avería")
+    reparacion_realizada = models.TextField("Reparación realizada", blank=True)
+    estado = models.CharField("Estado", max_length=12, choices=ESTADOS_INFORME_AVERIA, default="pendiente")
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL,
+                                  related_name="averias_creadas")
+    reparado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                     on_delete=models.SET_NULL, related_name="averias_reparadas")
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    completado_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+        verbose_name = "informe de avería"
+        verbose_name_plural = "informes de avería"
+
+    def __str__(self):
+        return f"Avería #{self.pk} · {self.numero_serie} · {self.get_estado_display()}"
+
+
+class PiezaInformeAveria(models.Model):
+    """Instantánea de la pieza utilizada; se conserva aunque después se elimine del catálogo."""
+    informe = models.ForeignKey(InformeAveria, on_delete=models.CASCADE, related_name="piezas")
+    pieza_id_inventario = models.PositiveIntegerField(null=True, blank=True)
+    pieza_codigo = models.CharField("Código de pieza", max_length=30)
+    pieza_nombre = models.CharField("Nombre de pieza", max_length=200)
+    cantidad = models.PositiveIntegerField("Cantidad")
+    origen = models.CharField("Origen", max_length=10, choices=ORIGENES_PIEZA_AVERIA)
+
+    class Meta:
+        ordering = ["pieza_codigo", "origen"]
+        verbose_name = "pieza de informe de avería"
+        verbose_name_plural = "piezas de informes de avería"
+
+    def __str__(self):
+        return f"{self.pieza_codigo} × {self.cantidad} ({self.get_origen_display()})"
+

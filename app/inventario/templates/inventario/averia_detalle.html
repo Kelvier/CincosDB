@@ -1,0 +1,133 @@
+{% load static %}
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Informe de avería #{{ informe.pk }} · Cincos</title>
+<link rel="stylesheet" href="{% static 'inventario/app.css' %}?v=cincos-averia-form-v3">
+{% include "inventario/_pwa.html" %}</head>
+<body class="averia-detalle">
+{% include "inventario/_topbar.html" %}
+<main>
+  <div class="crumb"><a href="{% url 'inicio' %}">Inicio</a> / <a href="{{ volver_url }}">{{ nombre_seccion }} {{ nombre_variante }}</a> / Informe de avería #{{ informe.pk }}</div>
+  <header class="averia-cabecera">
+    <div>
+      <p class="averia-kicker">{{ informe.get_tabla_display }} · {{ nombre_variante }}</p>
+      <h1>Informe de avería #{{ informe.pk }}</h1>
+      <p class="muted">Creado por {{ informe.creado_por.username }} el {{ informe.creado_en|date:"d/m/Y H:i" }}</p>
+    </div>
+    <span class="pill {% if informe.estado == 'pendiente' %}ambar{% else %}verde{% endif %}">{% if informe.estado == 'pendiente' %}Pendiente de reparación{% else %}Completado{% endif %}</span>
+  </header>
+
+  <section class="averia-panel">
+    <div class="averia-datos-grid">
+      <div><span class="averia-label">Número de serie</span><strong>{{ informe.numero_serie }}</strong></div>
+      <div><span class="averia-label">Tipo</span><strong>{{ informe.get_tabla_display }} · {{ nombre_variante }}</strong></div>
+    </div>
+    <h2>Descripción de la avería</h2>
+    <p class="averia-texto">{{ informe.descripcion_averia|linebreaksbr }}</p>
+  </section>
+
+  {% if informe.estado == 'completada' %}
+    <section class="averia-panel">
+      <h2>Reparación realizada</h2>
+      <p class="averia-texto">{{ informe.reparacion_realizada|linebreaksbr }}</p>
+      <p class="muted">Cerrado por {{ informe.reparado_por.username|default:"usuario desconocido" }}{% if informe.completado_en %} · {{ informe.completado_en|date:"d/m/Y H:i" }}{% endif %}</p>
+      <h2>Piezas utilizadas</h2>
+      {% if informe.piezas.all %}
+      <div class="tabla-wrap"><table class="averia-tabla"><thead><tr><th>Pieza</th><th>Cantidad</th><th>Origen</th></tr></thead><tbody>
+        {% for linea in informe.piezas.all %}<tr><td>{{ linea.pieza_codigo }} — {{ linea.pieza_nombre }}</td><td>{{ linea.cantidad }}</td><td>{{ linea.get_origen_display }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="muted">No se registraron piezas sustituidas.</p>{% endif %}
+    </section>
+  {% else %}
+    <form method="post" class="averia-panel" id="form-completar-averia">
+      {% csrf_token %}
+      <div class="averia-panel-head">
+        <div><h2>Completar reparación</h2><p>Este informe puede continuarlo cualquier usuario autorizado que tenga sesión iniciada.</p></div>
+      </div>
+      {% if error %}<div class="averia-error" role="alert">{{ error }}</div>{% endif %}
+      <label class="averia-campo"><span>Reparación realizada <b>*</b></span>
+        <textarea name="reparacion_realizada" rows="4" required placeholder="Describe la reparación que has realizado…">{{ reparacion_form }}</textarea>
+      </label>
+
+      <div class="averia-piezas-head"><div><h3>Piezas reemplazadas</h3><p>Elige solamente piezas configuradas para este modelo. Se descontarán del stock al cerrar el informe.</p></div>
+        <button class="btn sec" type="button" id="add-linea-pieza">+ Añadir pieza</button>
+      </div>
+      <div id="lineas-piezas" class="averia-lineas">
+        {% for linea in lineas_formulario %}
+        <div class="averia-linea">
+          <label class="averia-campo"><span>Pieza</span>
+            <select name="pieza" class="averia-select">
+              <option value="">No seleccionar</option>
+              {% for pieza in piezas_disponibles %}
+              <option value="{{ pieza.pk }}" data-stock="{{ pieza.restante }}" {% if linea.pieza|stringformat:"s" == pieza.pk|stringformat:"s" %}selected{% endif %}>{{ pieza.codigo }} — {{ pieza.nombre }} (stock: {{ pieza.restante }})</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="averia-campo"><span>Cantidad</span><input name="cantidad" type="number" min="1" max="100000" inputmode="numeric" value="{{ linea.cantidad }}" placeholder="Ej. 1"></label>
+          <label class="averia-campo"><span>Origen</span><select name="origen"><option value="nueva" {% if linea.origen == 'nueva' %}selected{% endif %}>Nueva</option><option value="reciclada" {% if linea.origen == 'reciclada' %}selected{% endif %}>Reciclada</option></select></label>
+          <button class="btn-del quitar-linea-pieza" type="button" aria-label="Quitar pieza">Quitar</button>
+        </div>
+        {% endfor %}
+      </div>
+      <template id="plantilla-linea-pieza">
+        <div class="averia-linea">
+          <label class="averia-campo"><span>Pieza</span>
+            <select name="pieza" class="averia-select">
+              <option value="">No seleccionar</option>
+              {% for pieza in piezas_disponibles %}<option value="{{ pieza.pk }}" data-stock="{{ pieza.restante }}">{{ pieza.codigo }} — {{ pieza.nombre }} (stock: {{ pieza.restante }})</option>{% endfor %}
+            </select>
+          </label>
+          <label class="averia-campo"><span>Cantidad</span><input name="cantidad" type="number" min="1" max="100000" inputmode="numeric" value="" placeholder="Ej. 1"></label>
+          <label class="averia-campo"><span>Origen</span><select name="origen"><option value="nueva">Nueva</option><option value="reciclada">Reciclada</option></select></label>
+          <button class="btn-del quitar-linea-pieza" type="button" aria-label="Quitar pieza">Quitar</button>
+        </div>
+      </template>
+      <p class="averia-aviso-stock">El stock se comprobará al guardar. Si no hay unidades suficientes, no se descontará ninguna pieza y podrás corregir el formulario.</p>
+      <div class="averia-form-acciones"><a class="btn sec" href="{{ volver_url }}#averias">Guardar para más tarde</a><button class="btn accion" type="submit">Cerrar reparación y descontar stock</button></div>
+    </form>
+  {% endif %}
+</main>
+<script>
+(() => {
+  const list = document.getElementById('lineas-piezas');
+  const tpl = document.getElementById('plantilla-linea-pieza');
+  const add = document.getElementById('add-linea-pieza');
+  if (!list || !tpl || !add) return;
+
+  // CINCOS-AVERIA-DEFAULT-QTY-v1
+  // Si hay pieza seleccionada y falta cantidad, mostrar 1 editable.
+  const completarCantidadVacia = row => {
+    const pieza = row.querySelector('select[name="pieza"]');
+    const cantidad = row.querySelector('input[name="cantidad"]');
+    if (pieza && cantidad && pieza.value && !cantidad.value.trim()) {
+      cantidad.value = '1';
+    }
+  };
+
+  list.querySelectorAll('.averia-linea').forEach(completarCantidadVacia);
+  list.addEventListener('change', event => {
+    const select = event.target.closest('select[name="pieza"]');
+    if (select) completarCantidadVacia(select.closest('.averia-linea'));
+  });
+
+  add.addEventListener('click', () => list.appendChild(tpl.content.cloneNode(true)));
+  list.addEventListener('click', event => {
+    const btn = event.target.closest('.quitar-linea-pieza');
+    if (!btn) return;
+    const rows = list.querySelectorAll('.averia-linea');
+    if (rows.length > 1) btn.closest('.averia-linea').remove();
+    else {
+      const row = btn.closest('.averia-linea');
+      row.querySelector('select[name="pieza"]').value = '';
+      row.querySelector('input[name="cantidad"]').value = '';
+      row.querySelector('select[name="origen"]').value = 'nueva';
+    }
+  });
+  const form = document.getElementById('form-completar-averia');
+  if (form) form.addEventListener('submit', event => {
+    if (!confirm('¿Cerrar la reparación? Se comprobarán y descontarán del inventario las piezas indicadas.')) event.preventDefault();
+  });
+})();
+</script>
+</body></html>

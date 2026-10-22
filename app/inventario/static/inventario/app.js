@@ -2,7 +2,7 @@
   const $ = id => document.getElementById(id);
   const B = document.body, TABLA = B.dataset.tabla, UNIDAD = B.dataset.unidad;
   const VAR = B.dataset.variante || "";
-  const ADMIN = B.dataset.admin === "1", RAPIDA = B.dataset.rapida === "1";
+  const ADMIN = B.dataset.admin === "1", RAPIDA = B.dataset.rapida === "1", INVENTARIO = B.dataset.inventario === "1";
   const META = JSON.parse($("meta").textContent), META_C = JSON.parse($("meta-contador").textContent);
   const csrf = () => (document.cookie.split("; ").find(c => c.startsWith("csrftoken=")) || "").split("=")[1] || "";
   const tb = el => el.classList.contains("card") ? "contador" : TABLA;
@@ -215,8 +215,8 @@
   }
 
   // ----- pestañas -----
-  const VISTAS = { rapida: "vista-tabla", avanzada: "vista-tabla", ver: "vista-tabla", montar: "vista-montar", reciclar: "vista-reciclar" };
-  const permitido = m => m === "avanzada" ? ADMIN : ["rapida", "montar", "reciclar"].includes(m) ? RAPIDA : m === "ver";
+  const VISTAS = { rapida: "vista-tabla", avanzada: "vista-tabla", ver: "vista-tabla", montar: "vista-montar", reciclar: "vista-reciclar", averias: "vista-averias" };
+  const permitido = m => m === "avanzada" ? ADMIN : ["montar", "reciclar"].includes(m) ? RAPIDA : ["rapida", "averias"].includes(m) ? INVENTARIO : m === "ver";
   function modo(m) {
     B.className = "modo-" + m;
     document.querySelectorAll(".tab").forEach(b => b.classList.toggle("act", b.dataset.modo === m));
@@ -227,6 +227,50 @@
   }
   document.querySelectorAll(".tab").forEach(b => b.onclick = () => modo(b.dataset.modo));
   let m0 = location.hash.slice(1);
-  if (!permitido(m0)) m0 = RAPIDA ? "rapida" : ADMIN ? "avanzada" : "ver";
+  if (!permitido(m0)) m0 = INVENTARIO ? "rapida" : ADMIN ? "avanzada" : "ver";
   modo(m0);
+
+  // ----- Crear informe: continuar ahora o dejarlo pendiente para otra persona -----
+  const frmAveria = $("frm-averia");
+  const btnPendienteAveria = $("btn-guardar-pendiente-averia");
+  let modoGuardadoAveria = "continuar";
+
+  async function guardarNuevoInformeAveria(modo) {
+    if (!frmAveria) return;
+    modoGuardadoAveria = modo;
+    const btnContinuar = $("btn-crear-averia");
+    const error = $("averia-error");
+    const numero_serie = $("averia-serie").value.trim();
+    const descripcion_averia = $("averia-descripcion").value.trim();
+    error.textContent = "";
+    if (!numero_serie || !descripcion_averia) {
+      error.textContent = "Indica el número de serie y describe la avería antes de guardar.";
+      return;
+    }
+    [btnContinuar, btnPendienteAveria].filter(Boolean).forEach(b => { b.disabled = true; });
+    try {
+      const j = await post("/api/averias/crear/", {
+        tabla: TABLA, variante: VAR, numero_serie, descripcion_averia
+      });
+      if (modoGuardadoAveria === "continuar") {
+        // En esta segunda pantalla están, en orden, la reparación realizada y las piezas sustituidas.
+        window.location.href = `/averias/${j.id}/`;
+      } else {
+        alert(`Informe #${j.id} guardado como pendiente. Otra persona podrá abrirlo y continuar la reparación.`);
+        location.hash = "averias";
+        location.reload();
+      }
+    } catch (err) {
+      error.textContent = err.message || "No se ha podido guardar el informe. Inténtalo de nuevo.";
+      [btnContinuar, btnPendienteAveria].filter(Boolean).forEach(b => { b.disabled = false; });
+    }
+  }
+
+  if (frmAveria) frmAveria.addEventListener("submit", e => {
+    e.preventDefault();
+    guardarNuevoInformeAveria("continuar");
+  });
+  if (btnPendienteAveria) btnPendienteAveria.addEventListener("click", () => {
+    guardarNuevoInformeAveria("pendiente");
+  });
 })();

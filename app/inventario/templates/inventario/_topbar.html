@@ -9,6 +9,7 @@
     <a href="{% url 'ocarines' %}" class="{% if seccion == 'ocarina' %}act{% endif %}"><svg class="i"><use href="#i-ocarina"/></svg><span>Ocarines</span></a>
     <a href="{% url 'manipulos' %}" class="{% if seccion == 'manipulo' %}act{% endif %}"><svg class="i"><use href="#i-manipulo"/></svg><span>Manípulos</span></a>
     <a href="{% url 'faltas' %}" class="{% if seccion == 'faltas' %}act{% endif %}"><svg class="i"><use href="#i-alert"/></svg><span class="full">Falta de stock</span><span class="short">Faltas</span></a>
+    <a href="{% url 'informes' %}" class="{% if seccion == 'informes' %}act{% endif %}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>Informes</span></a>
     <a href="{% url 'historial' %}" class="{% if seccion == 'historial' %}act{% endif %}"><svg class="i"><use href="#i-history"/></svg><span>Historial</span></a>
   </nav>
   <div class="user">

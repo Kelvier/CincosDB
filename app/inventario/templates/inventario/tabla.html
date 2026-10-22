@@ -2,9 +2,9 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}">
+<title>{{ titulo }}</title><link rel="stylesheet" href="{% static 'inventario/app.css' %}?v=cincos-tabs-v4">
 {% include "inventario/_pwa.html" %}</head>
-<body data-tabla="{{ tabla }}" data-variante="{{ variante }}" data-unidad="{{ unidad }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}">
+<body data-tabla="{{ tabla }}" data-variante="{{ variante }}" data-unidad="{{ unidad }}" data-admin="{{ es_admin|yesno:'1,0' }}" data-rapida="{{ puede_rapida|yesno:'1,0' }}" data-inventario="{{ puede_modificar_inventario|yesno:'1,0' }}">
 {% include "inventario/_topbar.html" %}
 
 <main>
@@ -30,9 +30,10 @@
 </section>
 
 <nav class="tabs">
-  {% if puede_rapida %}<button class="tab" data-modo="rapida"><i><svg class="i"><use href="#i-wrench"/></svg></i><b>Reparación</b><small>Sumar o restar piezas</small></button>{% endif %}
+  {% if puede_modificar_inventario %}<button class="tab" data-modo="rapida"><i><svg class="i"><use href="#i-wrench"/></svg></i><b>Modificar inventario</b><small>Solo añadir o restar cantidades</small></button>{% endif %}
   {% if puede_rapida %}<button class="tab" data-modo="montar"><i><svg class="i"><use href="#i-factory"/></svg></i><b>Montar {{ unidad }}</b><small>Resta los materiales solo</small></button>{% endif %}
   {% if puede_rapida %}<button class="tab" data-modo="reciclar"><i><svg class="i"><use href="#i-recycle"/></svg></i><b>Reciclar</b><small>Anotar piezas recuperadas</small></button>{% endif %}
+  {% if puede_modificar_inventario %}<button class="tab" data-modo="averias"><i><svg class="i"><use href="#i-alert"/></svg></i><b>Informe de avería</b><small>Registrar una avería o continuar una reparación</small></button>{% endif %}
   {% if es_admin %}<button class="tab" data-modo="avanzada"><i><svg class="i"><use href="#i-sliders"/></svg></i><b>Edición avanzada</b><small>Editar todos los datos</small></button>{% endif %}
 </nav>
 
@@ -122,6 +123,46 @@
     <span id="r-total" class="total"></span>
     <button class="btn accion" id="r-ok"> Guardar reciclaje</button>
   </div>
+</section>
+{% endif %}
+{% if puede_modificar_inventario %}
+<!-- ===== Vista: informes de avería del modelo actual ===== -->
+<section id="vista-averias" class="vista" hidden>
+  <section class="averia-panel">
+    <h2>Nuevo informe de avería</h2>
+    <p>Equipo: <strong>{{ nombre_seccion }} · {{ nombre_variante }}</strong>.</p>
+    <div class="averia-pasos"><strong>Paso 1 · Describe la avería.</strong> Al continuar, se abrirá el paso 2 para explicar la reparación y registrar las piezas sustituidas. Si solo vas a comunicar el problema, guárdalo como pendiente para que otra persona lo repare.</div>
+    <form id="frm-averia" class="averia-form-grid averia-form-inicio">
+      <label class="averia-campo"><span>Número de serie <b>*</b></span><input id="averia-serie" name="numero_serie" type="text" maxlength="100" required autocomplete="off" placeholder="Número de serie de la máquina"></label>
+      <label class="averia-campo" style="grid-column:1/-1"><span>Descripción de la avería <b>*</b></span><textarea id="averia-descripcion" name="descripcion_averia" rows="3" required placeholder="Describe qué ha fallado, síntomas o daños observados…"></textarea></label>
+      <div class="averia-form-acciones averia-inicio-acciones" style="grid-column:1/-1"><button class="btn accion" type="submit" id="btn-crear-averia">Guardar y continuar con la reparación</button><button class="btn sec" type="button" id="btn-guardar-pendiente-averia">Guardar solo como pendiente</button></div>
+      <p id="averia-error" class="err" role="alert" style="grid-column:1/-1"></p>
+    </form>
+  </section>
+  <section class="averia-panel">
+    <div class="averia-panel-head"><div><h2>Informes pendientes de reparación</h2><p>Los informes son compartidos: cualquier usuario con sesión puede abrirlos y terminarlos.</p></div></div>
+    <div class="averia-lista">
+      {% for inf in informes_pendientes %}
+      <article class="averia-item">
+        <div class="averia-item-main"><h3>Serie {{ inf.numero_serie }} <span class="pill ambar">Pendiente</span></h3>
+          <p>{{ inf.descripcion_averia|truncatechars:180 }}</p><small>Informe #{{ inf.pk }} · Creado por {{ inf.creado_por.username|default:"usuario desconocido" }} · {{ inf.creado_en|date:"d/m/Y H:i" }}</small></div>
+        <a class="btn" href="{% url 'averia_detalle' inf.pk %}">Continuar reparación</a>
+      </article>
+      {% empty %}<p class="muted">No hay informes pendientes para este modelo. Los nuevos informes que guardes aparecerán aquí.</p>{% endfor %}
+    </div>
+  </section>
+  <section class="averia-panel">
+    <div class="averia-panel-head"><div><h2>Últimos informes completados</h2><p>Consulta reparaciones anteriores de este mismo modelo.</p></div></div>
+    <div class="averia-lista">
+      {% for inf in informes_completados %}
+      <article class="averia-item">
+        <div class="averia-item-main"><h3>Serie {{ inf.numero_serie }} <span class="pill verde">Completado</span></h3>
+          <p>{{ inf.descripcion_averia|truncatechars:140 }}</p><small>Informe #{{ inf.pk }} · Reparado por {{ inf.reparado_por.username|default:"usuario desconocido" }}{% if inf.completado_en %} · {{ inf.completado_en|date:"d/m/Y H:i" }}{% endif %}</small></div>
+        <a class="btn sec" href="{% url 'averia_detalle' inf.pk %}">Ver informe</a>
+      </article>
+      {% empty %}<p class="muted">Todavía no hay reparaciones completadas para este modelo.</p>{% endfor %}
+    </div>
+  </section>
 </section>
 {% endif %}
 </main>
